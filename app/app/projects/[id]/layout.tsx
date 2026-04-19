@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, Settings } from "lucide-react";
 import { ProjectTabs } from "./project-tabs";
 
 export default async function ProjectLayout({
@@ -39,6 +39,13 @@ export default async function ProjectLayout({
               {[project.client_name, project.address].filter(Boolean).join(" · ") || "—"}
             </p>
           </div>
+          <Link
+            href={`/app/projects/${project.id}/settings`}
+            className="tap grid place-items-center h-10 w-10 rounded-lg text-muted-foreground hover:bg-muted shrink-0"
+            aria-label="הגדרות"
+          >
+            <Settings className="h-4 w-4" />
+          </Link>
         </div>
       </div>
 

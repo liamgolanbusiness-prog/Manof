@@ -292,6 +292,65 @@ Then fix the worst friction.
 
 **Next (Cycle 13):** PWA manifest + icons + offline fallback + small polish pass.
 
+---
+
+## Cycle 13 — 2026-04-19 — PWA + polish + edit-project flow
+**Built:**
+- `public/manifest.json` with Hebrew name + short_name + RTL direction + `start_url: /app/projects` so installing the PWA lands the user where they want.
+- `public/icons/icon-192.svg`, `icon-512.svg`, `favicon.svg` — simple "ע" placeholder branding (blue + white). Real logo is a TODO.
+- `app/layout.tsx` — wired `icons` metadata + updated title/description.
+- `app/not-found.tsx` — 404 page with "לדף הבית" CTA.
+- `app/error.tsx` — error boundary with friendly Hebrew copy + reset button.
+- `app/loading.tsx` — generic spinner.
+- `.eslintrc.json` — `next/core-web-vitals`; `npx next lint` now returns clean.
+- **Edit-project flow:** new `/app/projects/[id]/settings` page with full form (name, address, client, dates, contract value, status, progress %) + delete-with-name-confirmation. Settings icon in the project header links to it.
+
+**Works:**
+- Build: ✓ 17 routes, 0 errors, 0 warnings. Middleware 80.3 kB.
+- Typecheck: `tsc --noEmit` clean.
+- Lint: `npx next lint` → "No ESLint warnings or errors".
+
+**Broken/TODO:**
+- No service worker yet — PWA is install-only, not offline-first. Writing one properly requires cache strategy per route (stale-while-revalidate on list pages, network-first on write pages). Skipping for MVP.
+- Icons are SVG placeholders, not real app-icon PNGs. A designer should replace.
+- Hebrew text rendering: relying on system fonts. Not shipping Rubik. Acceptable but test on iOS Safari where the default Hebrew rendering is sometimes lighter than expected.
+
+**What the founder can do this morning:**
+1. `npm install && npm run dev`, open `http://localhost:3000`
+2. Sign up → creates a project → redirect to today → can start a day, save notes, add a photo (needs storage bucket set up), log an issue, close the day
+3. Switch to money tab → add expense + payment → see KPIs update
+4. Switch to people tab → add contacts + assign to project → attendance strip populates on today
+5. Switch to client tab → copy portal URL → visit `/portal/[token]` in an incognito window → sees the client view
+6. Use settings icon (⚙) in header to edit project details or archive
+
+## Morning checklist (for the founder, before shipping)
+
+1. **Supabase Auth settings**: turn OFF "Confirm email" for instant-login UX (otherwise signup returns an "awaiting email confirmation" message).
+2. **Storage bucket**: create `project-media` as a public-read bucket, with policies allowing authenticated inserts scoped to `auth.uid()` and public SELECT.
+3. **DB unique constraint**: add `UNIQUE (project_id, report_date)` on `daily_reports` so two reports can't collide on the same day (see QUESTIONS #10).
+4. **`.env.local`**: verify `NEXT_PUBLIC_APP_URL` is set to the real production URL before shipping so portal links go to the right place.
+5. **Real app icons**: replace the placeholder SVGs under `public/icons/`.
+6. **Vercel env vars**: copy the three Supabase keys into Vercel project settings.
+7. Read `QUESTIONS.md` and decide any remaining open items.
+
+## What isn't built (honest scope)
+
+Not done but **tracked** — either in QUESTIONS.md or README.md "Known limits":
+- Voice notes (Phase 10 in brief)
+- Offline-first sync (service worker is the only missing PWA piece)
+- Google Places / address autocomplete
+- SMS auth
+- Device contact import
+- Payment SDKs (Cardcom / Tranzila)
+- Cross-project dashboard
+- Edit-in-place for expenses/payments
+- Contact search
+- Push notifications
+- Expense / report CSV export
+
+**Overall**: every brief-item through Phase 9 (PWA + polish) is either done or has a rock-solid skeleton with a documented next step. Phase 10 deliberately skipped per "if time remains".
+
+
 
 
 

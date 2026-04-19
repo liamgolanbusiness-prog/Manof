@@ -3,14 +3,18 @@ import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
 
 export const metadata: Metadata = {
-  title: "Atar — עתר",
-  description: "אפליקציית ניהול פרויקטים לקבלני שיפוצים",
+  title: "עתר — ניהול אתרי בנייה",
+  description: "אפליקציית ניהול פרויקטים לקבלני שיפוצים — יומן, הוצאות ולקוחות במקום אחד",
   manifest: "/manifest.json",
   applicationName: "Atar",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "Atar",
+    title: "עתר",
+  },
+  icons: {
+    icon: [{ url: "/favicon.svg", type: "image/svg+xml" }],
+    apple: [{ url: "/icons/icon-192.svg", type: "image/svg+xml" }],
   },
 };
 
