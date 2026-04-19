@@ -90,5 +90,28 @@ Founder is asleep. Autonomous build starting 2026-04-19.
 
 **Next (Cycle 4):** Real `/app/projects` listing (grid of cards with cover photo, client, status chip, empty state) + `/app/projects/new` form with server action (name, address, client name, client phone, start/end date, contract value). Redirect new project → `/app/projects/[id]/today`. Then deep review: walk the full signup → first-project flow as רמי would.
 
+---
+
+## Cycle 4 — 2026-04-19 — Projects list + create
+**Built:**
+- `/app/projects` — responsive grid (1/2/3 cols) of cards with cover photo placeholder, status chip (פעיל/מוקפא/הושלם/בארכיון), progress bar, client name, address, contract value, target date. Empty state with dashed border + primary CTA.
+- `/app/projects/new` — form (Hebrew labels, validation): name required, address, client name, client phone (LTR input), start + target dates, contract value (numeric, strips commas/shekel sign).
+- `app/app/projects/actions.ts` — `createProjectAction` (Supabase insert + redirect to the new project's today tab) and `updateProjectStatus` helper for later.
+- Stub `/app/projects/[id]/today` so the post-create redirect lands on a real route.
+- Used Next.js `Image` with `fill` + `sizes` on cover photo; remote pattern already allows `*.supabase.co`.
+
+**Works:**
+- Build clean — 7 routes. `/app/projects` 5.26 kB first-load, reasonable.
+- Empty state rendering, card grid responsive, status chip hidden when active.
+- Server action runs with `requireUser` (inherits protection) even though middleware also guards.
+
+**Broken/TODO:**
+- Cover photo upload not implemented yet — the card shows a folder icon if `cover_photo_url` is null. Will be wired in the project home / settings tab.
+- Archive / reactivate UI: the `updateProjectStatus` action exists but has no button yet. Added to project home in Cycle 5.
+- Haven't walked the actual login → create-project flow in a browser. Deep review scheduled after Cycle 5 when the project home has content.
+
+**Next (Cycle 5):** Real `/app/projects/[id]` home with tabs היום | יומן | כסף | אנשים | משימות | לקוח. Each tab is its own route (`today`, `diary`, `money`, `people`, `tasks`, `client`). Wire a shared layout that reads the project once and shows a back-link, name, and tab nav. Default landing on "היום" (already the post-create redirect). Stubs for diary/money/people/tasks/client — real content comes later.
+
+
 
 
