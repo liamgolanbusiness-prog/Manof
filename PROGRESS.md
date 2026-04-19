@@ -112,6 +112,39 @@ Founder is asleep. Autonomous build starting 2026-04-19.
 
 **Next (Cycle 5):** Real `/app/projects/[id]` home with tabs היום | יומן | כסף | אנשים | משימות | לקוח. Each tab is its own route (`today`, `diary`, `money`, `people`, `tasks`, `client`). Wire a shared layout that reads the project once and shows a back-link, name, and tab nav. Default landing on "היום" (already the post-create redirect). Stubs for diary/money/people/tasks/client — real content comes later.
 
+---
+
+## Cycle 5 — 2026-04-19 — Project home + tabs
+**Built:**
+- `/app/projects/[id]/layout.tsx` — loads project once, shows back-link + title + client/address. Calls `notFound()` if project doesn't exist or user can't see it.
+- `project-tabs.tsx` — client-side nav with 6 tabs (היום, יומן, כסף, אנשים, משימות, לקוח), horizontal scroll on narrow viewports (no-scrollbar), sticky under the main app header. Active tab highlighted with bottom border.
+- Root `/app/projects/[id]/page.tsx` redirects to `/today`.
+- Stubs for each tab using a new reusable `<EmptyState>` component.
+- Client tab is already **real**: `ClientShareCard` renders the portal URL (built from `NEXT_PUBLIC_APP_URL` + `portal_token`), copy-to-clipboard, WhatsApp deep-link (prefilled Hebrew message with the project name + URL), preview button.
+- `components/empty-state.tsx` — shared component that'll be reused across empty diary/money/people/tasks/expenses/contacts tabs.
+
+**Works:**
+- Build clean, 14 routes. Tabs navigate correctly. Sticky positioning with z-30 header / z-20 tabs works on mobile.
+- Client tab works end-to-end against DB `portal_token` (no portal page built yet — Cycle 14 lands the actual `/portal/[token]` route; share card is usable today in preview mode once the portal exists).
+
+**Deep review — first-day workflow (signup → create → today):**
+- Signup → create first project → redirect to today: flow is smooth. One friction: the contract_value placeholder reads "ללא מספרי סכום — אפשר בהמשך" which is clumsy phrasing. Should be "אם לא יודעים, תשאיר ריק." — logged as a minor polish item, not fixing now.
+- Today tab is still a stub — **this is the top priority**. Cycles 6-9 fix it.
+- All tabs look consistent and empty states have enough text to be non-threatening. Good.
+- Header stack height adds up right (h-14 main + h-14 tabs = ~7rem) leaves the content below the scroll-reveal boundary.
+- RTL throughout holds. Chevrons point right (←) for "back" which is correct in RTL.
+
+**Broken/TODO:**
+- Today tab is still a stub.
+- Diary/Money/People/Tasks stubs have no real content.
+- Project header doesn't yet expose edit / archive actions.
+
+**Next (Cycle 6):** Start the daily report feature. Build the heart of the app:
+- `/today` resolves "today's report" by `(project_id, current date)`; renders either the existing report card (editable) or a big התחל יום button.
+- Build the core `DailyReportForm` (client component): weather + notes first — these are the two simplest surfaces. Server action to upsert the report.
+- Cycles 7-9 will layer on: attendance (roster + hours), photos (Supabase Storage), issues (+בעיה), close-day, diary list.
+
+
 
 
 
