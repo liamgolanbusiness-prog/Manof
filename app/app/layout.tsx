@@ -1,0 +1,65 @@
+import Link from "next/link";
+import { requireUser } from "@/lib/auth";
+import { createClient } from "@/lib/supabase/server";
+import { logoutAction } from "@/app/(auth)/login/actions";
+import { Button } from "@/components/ui/button";
+import { HardHat, LogOut, Plus, User } from "lucide-react";
+
+export default async function AppLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  const user = await requireUser();
+  const supabase = createClient();
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("full_name, business_name")
+    .eq("id", user.id)
+    .maybeSingle();
+
+  const displayName = profile?.full_name || profile?.business_name || user.email;
+
+  return (
+    <div className="min-h-screen bg-muted/20">
+      <header className="sticky top-0 z-30 bg-background/95 backdrop-blur border-b">
+        <div className="container h-14 flex items-center justify-between gap-2">
+          <Link href="/app/projects" className="flex items-center gap-2 font-bold">
+            <HardHat className="h-5 w-5 text-primary" />
+            <span className="hidden sm:inline">עתר</span>
+          </Link>
+          <nav className="flex items-center gap-1">
+            <Link href="/app/projects/new">
+              <Button size="sm" variant="ghost" className="gap-1">
+                <Plus className="h-4 w-4" />
+                <span className="hidden sm:inline">פרויקט חדש</span>
+              </Button>
+            </Link>
+            <Link href="/app/contacts">
+              <Button size="sm" variant="ghost" className="gap-1">
+                <User className="h-4 w-4" />
+                <span className="hidden sm:inline">אנשי קשר</span>
+              </Button>
+            </Link>
+            <form action={logoutAction}>
+              <Button
+                size="sm"
+                variant="ghost"
+                type="submit"
+                className="gap-1 text-muted-foreground"
+                aria-label="התנתקות"
+              >
+                <LogOut className="h-4 w-4" />
+              </Button>
+            </form>
+          </nav>
+        </div>
+      </header>
+      {/* Slim user strip */}
+      <div className="container py-1 text-xs text-muted-foreground truncate">
+        שלום, {displayName}
+      </div>
+      {children}
+    </div>
+  );
+}

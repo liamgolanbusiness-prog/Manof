@@ -32,7 +32,15 @@ export interface Database {
           logo_url?: string | null;
           created_at?: Timestamp | null;
         };
-        Update: Partial<Database["public"]["Tables"]["profiles"]["Insert"]>;
+        Update: {
+          id?: string;
+          phone?: string | null;
+          full_name?: string | null;
+          business_name?: string | null;
+          logo_url?: string | null;
+          created_at?: Timestamp | null;
+        };
+        Relationships: [];
       };
       projects: {
         Row: {
@@ -69,7 +77,24 @@ export interface Database {
           created_at?: Timestamp | null;
           updated_at?: Timestamp | null;
         };
-        Update: Partial<Database["public"]["Tables"]["projects"]["Insert"]>;
+        Update: {
+          id?: string;
+          user_id?: string;
+          name?: string;
+          address?: string | null;
+          client_name?: string | null;
+          client_phone?: string | null;
+          contract_value?: number | null;
+          start_date?: ISODate | null;
+          target_end_date?: ISODate | null;
+          status?: string | null;
+          cover_photo_url?: string | null;
+          portal_token?: string | null;
+          progress_pct?: number | null;
+          created_at?: Timestamp | null;
+          updated_at?: Timestamp | null;
+        };
+        Relationships: [];
       };
       project_members: {
         Row: {
@@ -88,7 +113,15 @@ export interface Database {
           agreed_amount?: number | null;
           created_at?: Timestamp | null;
         };
-        Update: Partial<Database["public"]["Tables"]["project_members"]["Insert"]>;
+        Update: {
+          id?: string;
+          project_id?: string;
+          contact_id?: string;
+          role_in_project?: string | null;
+          agreed_amount?: number | null;
+          created_at?: Timestamp | null;
+        };
+        Relationships: [];
       };
       contacts: {
         Row: {
@@ -115,7 +148,19 @@ export interface Database {
           notes?: string | null;
           created_at?: Timestamp | null;
         };
-        Update: Partial<Database["public"]["Tables"]["contacts"]["Insert"]>;
+        Update: {
+          id?: string;
+          user_id?: string;
+          name?: string;
+          phone?: string | null;
+          role?: string;
+          trade?: string | null;
+          pay_rate?: number | null;
+          pay_type?: string | null;
+          notes?: string | null;
+          created_at?: Timestamp | null;
+        };
+        Relationships: [];
       };
       daily_reports: {
         Row: {
@@ -142,7 +187,19 @@ export interface Database {
           created_at?: Timestamp | null;
           updated_at?: Timestamp | null;
         };
-        Update: Partial<Database["public"]["Tables"]["daily_reports"]["Insert"]>;
+        Update: {
+          id?: string;
+          project_id?: string;
+          user_id?: string;
+          report_date?: ISODate;
+          weather?: string | null;
+          notes?: string | null;
+          voice_note_url?: string | null;
+          locked?: boolean | null;
+          created_at?: Timestamp | null;
+          updated_at?: Timestamp | null;
+        };
+        Relationships: [];
       };
       attendance: {
         Row: {
@@ -161,7 +218,15 @@ export interface Database {
           notes?: string | null;
           created_at?: Timestamp | null;
         };
-        Update: Partial<Database["public"]["Tables"]["attendance"]["Insert"]>;
+        Update: {
+          id?: string;
+          daily_report_id?: string;
+          contact_id?: string;
+          hours_worked?: number | null;
+          notes?: string | null;
+          created_at?: Timestamp | null;
+        };
+        Relationships: [];
       };
       report_photos: {
         Row: {
@@ -182,7 +247,16 @@ export interface Database {
           geo_lng?: number | null;
           taken_at?: Timestamp | null;
         };
-        Update: Partial<Database["public"]["Tables"]["report_photos"]["Insert"]>;
+        Update: {
+          id?: string;
+          daily_report_id?: string;
+          url?: string;
+          caption?: string | null;
+          geo_lat?: number | null;
+          geo_lng?: number | null;
+          taken_at?: Timestamp | null;
+        };
+        Relationships: [];
       };
       issues: {
         Row: {
@@ -211,7 +285,20 @@ export interface Database {
           created_at?: Timestamp | null;
           resolved_at?: Timestamp | null;
         };
-        Update: Partial<Database["public"]["Tables"]["issues"]["Insert"]>;
+        Update: {
+          id?: string;
+          project_id?: string;
+          user_id?: string;
+          title?: string;
+          description?: string | null;
+          photo_url?: string | null;
+          severity?: string | null;
+          status?: string | null;
+          source_report_id?: string | null;
+          created_at?: Timestamp | null;
+          resolved_at?: Timestamp | null;
+        };
+        Relationships: [];
       };
       expenses: {
         Row: {
@@ -242,7 +329,21 @@ export interface Database {
           notes?: string | null;
           created_at?: Timestamp | null;
         };
-        Update: Partial<Database["public"]["Tables"]["expenses"]["Insert"]>;
+        Update: {
+          id?: string;
+          project_id?: string;
+          user_id?: string;
+          amount?: number;
+          category?: string;
+          supplier_contact_id?: string | null;
+          receipt_photo_url?: string | null;
+          paid_by?: string | null;
+          payment_method?: string | null;
+          expense_date?: ISODate;
+          notes?: string | null;
+          created_at?: Timestamp | null;
+        };
+        Relationships: [];
       };
       payments: {
         Row: {
@@ -271,7 +372,20 @@ export interface Database {
           notes?: string | null;
           created_at?: Timestamp | null;
         };
-        Update: Partial<Database["public"]["Tables"]["payments"]["Insert"]>;
+        Update: {
+          id?: string;
+          project_id?: string;
+          user_id?: string;
+          direction?: string;
+          amount?: number;
+          counterparty_contact_id?: string | null;
+          payment_date?: ISODate;
+          method?: string | null;
+          invoice_number?: string | null;
+          notes?: string | null;
+          created_at?: Timestamp | null;
+        };
+        Relationships: [];
       };
       tasks: {
         Row: {
@@ -298,27 +412,49 @@ export interface Database {
           created_at?: Timestamp | null;
           completed_at?: Timestamp | null;
         };
-        Update: Partial<Database["public"]["Tables"]["tasks"]["Insert"]>;
+        Update: {
+          id?: string;
+          project_id?: string;
+          user_id?: string;
+          title?: string;
+          description?: string | null;
+          assignee_contact_id?: string | null;
+          due_date?: ISODate | null;
+          status?: string | null;
+          created_at?: Timestamp | null;
+          completed_at?: Timestamp | null;
+        };
+        Relationships: [];
       };
     };
-    Views: Record<string, never>;
-    Functions: Record<string, never>;
-    Enums: Record<string, never>;
+    Views: { [_ in never]: never };
+    Functions: { [_ in never]: never };
+    Enums: { [_ in never]: never };
+    CompositeTypes: { [_ in never]: never };
   };
 }
 
 // Convenient row/insert/update aliases
 export type Profile = Database["public"]["Tables"]["profiles"]["Row"];
 export type Project = Database["public"]["Tables"]["projects"]["Row"];
+export type ProjectInsert = Database["public"]["Tables"]["projects"]["Insert"];
 export type ProjectMember = Database["public"]["Tables"]["project_members"]["Row"];
 export type Contact = Database["public"]["Tables"]["contacts"]["Row"];
+export type ContactInsert = Database["public"]["Tables"]["contacts"]["Insert"];
 export type DailyReport = Database["public"]["Tables"]["daily_reports"]["Row"];
+export type DailyReportInsert = Database["public"]["Tables"]["daily_reports"]["Insert"];
 export type Attendance = Database["public"]["Tables"]["attendance"]["Row"];
+export type AttendanceInsert = Database["public"]["Tables"]["attendance"]["Insert"];
 export type ReportPhoto = Database["public"]["Tables"]["report_photos"]["Row"];
+export type ReportPhotoInsert = Database["public"]["Tables"]["report_photos"]["Insert"];
 export type Issue = Database["public"]["Tables"]["issues"]["Row"];
+export type IssueInsert = Database["public"]["Tables"]["issues"]["Insert"];
 export type Expense = Database["public"]["Tables"]["expenses"]["Row"];
+export type ExpenseInsert = Database["public"]["Tables"]["expenses"]["Insert"];
 export type Payment = Database["public"]["Tables"]["payments"]["Row"];
+export type PaymentInsert = Database["public"]["Tables"]["payments"]["Insert"];
 export type Task = Database["public"]["Tables"]["tasks"]["Row"];
+export type TaskInsert = Database["public"]["Tables"]["tasks"]["Insert"];
 
 // Known enum-ish strings (kept loose; DB columns are plain text)
 export const CONTACT_ROLES = ["worker", "supplier", "subcontractor", "client", "other"] as const;

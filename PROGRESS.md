@@ -66,4 +66,29 @@ Founder is asleep. Autonomous build starting 2026-04-19.
 
 **Next (Cycle 3):** Auth pages. `/login` + `/signup` with email+password, client-side form with server action, post-signup redirect to `/app/projects/new` (or `/app/projects` if user already has a project). Sign-out via server action. Wire toasts for errors. Test the full round trip: signup → session cookie → middleware passes → `/app/projects` (needs at least a stub page) renders.
 
+---
+
+## Cycle 3 — 2026-04-19 — Auth (login, signup, sign-out, protected shell)
+**Built:**
+- `app/(auth)/layout.tsx` — centered, muted-bg shell with link back to `/`.
+- `app/(auth)/login/page.tsx` + `login-form.tsx` + `actions.ts` — email/password login with `useFormState` + server action, `next` param support, Hebrew error translations.
+- `app/(auth)/signup/page.tsx` + `signup-form.tsx` — full name + email + password. Post-signup best-effort fills `profiles.full_name` if trigger left it null, then redirects to `/app/projects/new`.
+- Shared `logoutAction` reused from login/actions.ts (sign-out + redirect).
+- `app/app/layout.tsx` — protected app shell: sticky header with logo, "פרויקט חדש", contacts, logout. Pulls profile display name. Calls `requireUser()`.
+- `app/app/projects/page.tsx` + `new/page.tsx` + `contacts/page.tsx` — stubs so middleware redirects land on a real route.
+- Upgraded `@supabase/ssr` 0.5.2 → 0.10.2 and `@supabase/supabase-js` to 2.103.3 to fix a **type inference mismatch** (ssr 0.5.2 was built against older supabase-js types; the path `@supabase/supabase-js/dist/module/lib/types` no longer exists in modern builds). This caused `.update/.insert/.upsert` on any Supabase client to resolve to `never`. After upgrade, types flow correctly and build passes.
+- Added full explicit `Update` column shapes in `database.types.ts` (replaced `Partial<...["Insert"]>`) and `Relationships: []` on each table — matches the modern `GenericSchema` that postgrest-js expects.
+
+**Works:**
+- Build: ✓ 9 routes, middleware 80.3 kB. Type-check clean.
+- Routes present: `/`, `/login`, `/signup`, `/app/projects`, `/app/projects/new`, `/app/contacts`.
+- Login form uses `useFormState` (React 18) so errors render without JS required for submission.
+
+**Broken/TODO:**
+- Haven't booted dev server to test an actual signup round-trip. If email confirmation is on in Supabase, the session will be `null` and the server action returns an error message — founder needs to disable "Confirm email" in Supabase dashboard.
+- Toaster is rendered in root layout but not wired to auth flow; errors come from `useFormState` inline — fine for now.
+
+**Next (Cycle 4):** Real `/app/projects` listing (grid of cards with cover photo, client, status chip, empty state) + `/app/projects/new` form with server action (name, address, client name, client phone, start/end date, contract value). Redirect new project → `/app/projects/[id]/today`. Then deep review: walk the full signup → first-project flow as רמי would.
+
+
 
