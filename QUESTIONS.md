@@ -14,9 +14,10 @@ Open questions from the overnight build. Each question has the default I chose s
 5. **Phone input format for contacts / clients**: defaulting to plain `tel` input, no country code enforcement. Israeli numbers vary in format — ok to leave permissive?
 6. **Currency**: defaulting to ILS (₪) everywhere, no multi-currency.
 7. **Date display**: Hebrew locale, Gregorian (not Hebrew calendar). Confirm.
-8. **"Progress %" on client portal**: brief says "read from project.notes for MVP." I'll add a dedicated `progress_pct` column in the projects table via a migration — simpler and cleaner than parsing notes. (If you want it read from notes, I'll swap.)
-9. **Portal token**: assumed `projects.portal_token` is pre-generated on insert by a DB trigger. If not, I'll generate in the server action.
-10. **Daily report uniqueness**: one report per `(project_id, date)`? Assuming yes; enforced via unique constraint if not already there.
+8. **"Progress %" on client portal**: the DB already has `projects.progress_pct` (integer, default 0). Using it. ✅ Resolved.
+9. **Portal token**: `projects.portal_token` has DB default `gen_random_uuid()`. Using it. ✅ Resolved.
+10. **Daily report uniqueness**: one report per `(project_id, date)`? Brief implies yes. I don't see a unique constraint in the OpenAPI output — but Postgres constraints aren't always reflected there. I'll upsert on `(project_id, report_date)` and rely on a constraint to prevent dupes. **Please add a `UNIQUE (project_id, report_date)` constraint on `daily_reports` if not already there.**
+11. **`daily_reports.locked` vs brief's `is_closed`**: the DB column is `locked`. I'm using it with the semantic "closed day" in the UI. The value stays a simple boolean.
 
 ## Things I deliberately skipped (to revisit)
 
