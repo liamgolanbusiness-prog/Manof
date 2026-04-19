@@ -84,6 +84,17 @@ export default async function TodayPage({ params }: { params: { id: string } }) 
       null,
   }));
 
+  // Contacts not yet in this project — for inline "add member" when roster is empty
+  const memberContactIds = new Set(roster.map((r) => r.contactId));
+  const { data: allContacts } = await supabase
+    .from("contacts")
+    .select("id, name, trade, role")
+    .eq("user_id", user.id)
+    .order("name", { ascending: true });
+  const availableContacts = (allContacts ?? []).filter(
+    (c) => !memberContactIds.has(c.id)
+  );
+
   return (
     <div className="container py-5 pb-safe space-y-4">
       <div className="flex items-baseline justify-between gap-2">
@@ -104,6 +115,7 @@ export default async function TodayPage({ params }: { params: { id: string } }) 
         roster={roster}
         photos={photos}
         issues={issues}
+        availableContacts={availableContacts}
       />
     </div>
   );

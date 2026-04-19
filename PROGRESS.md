@@ -219,6 +219,49 @@ Ambitious cycle — landed the entire report UI end-to-end in one pass rather th
 
 Then fix the worst friction.
 
+---
+
+## Cycle 9 — 2026-04-19 — Deep review + polish
+**Deep review walkthrough:**
+1. Projects list — OK, clean, grid works, empty state clear.
+2. Project today — **friction**: if roster empty, the page told user "לחץ כאן כדי להוסיף" which sends them to /people. Context switch, hard to get back.
+3. Everything else checks out.
+
+**Fix landed this cycle:**
+- Moved `AddMemberButton` into the attendance-empty card, so you can add a member inline without leaving `/today`. Exported the component from `people/` and imported into `today-view`.
+- Passed `availableContacts` from today/page.tsx to TodayView so the inline dialog knows who can be added.
+
+**Not fixed (deferred):**
+- Still no edit-project UI (can't change address/client after create). Will add in polish cycle if time.
+- Attendance has no "was absent today" vs "never present" distinction. Fine for MVP — absent = 0 hours saved.
+
+**Next (Cycle 10):** Money tab (expenses + payments). Six KPIs (תקציב / הוצא / נותר / התקבל / יצא / תזרים נטו). Two sub-tabs. Expense dialog with supplier picker + receipt photo upload. Payment dialog with direction toggle (in/out), counterparty picker filtered by direction.
+
+---
+
+## Cycle 10 — 2026-04-19 — Money tab (expenses + payments)
+**Built:**
+- `/app/projects/[id]/money/page.tsx` — six KPI cards (contract → remaining + payments in/out → net cash flow) in a 2/3-col grid at the top. Tones: muted, warning, success, destructive (red when remaining < 0 or cash flow negative).
+- Inner sub-tabs (הוצאות / תשלומים) using the existing shadcn `Tabs` primitive.
+- `ExpenseDialog` — amount (decimal inputmode), category (8 options), supplier picker (filtered to supplier/subcontractor/other contacts) with inline "+ ספק חדש" using the shared `ContactDialog`, payment method, expense date (default today), receipt photo (camera capture, uploads to `project-media/projects/<pid>/receipts/`), notes.
+- `PaymentDialog` — direction toggle (big two-button pick), counterparty filtered by direction (client for IN, supplier/worker/subcontractor for OUT), method, date, invoice number, notes.
+- Expense + Payment lists — per-row icon tile (green down-arrow for IN, amber up-arrow for OUT), amount, context line (name · method · date · invoice), notes. Open receipt button, delete button with confirm.
+- `money/actions.ts` — `createExpense`, `deleteExpense`, `createPayment`, `deletePayment` all guarded by project ownership.
+
+**Works:**
+- Build clean; money page 208 kB first-load (heavy because of 2× Dialog + Select + Tabs). Acceptable.
+- Delete-confirmation + refresh works through `router.refresh()` after revalidatePath on the action side.
+
+**Broken/TODO:**
+- Receipt upload share the `project-media` bucket but under a `receipts/` subpath — same storage policy dependency as photos.
+- No per-category filter on expense list yet. Sensible for a first release.
+- No export (CSV / PDF). Deferred to post-MVP.
+- Edit-in-place not supported for expenses/payments — you delete + recreate. Acceptable for MVP.
+- Payment direction filters counterparty options. If a founder tries to pay a client (refund) or receive from a supplier, they'll have to switch the contact's role first. Acceptable for MVP.
+
+**Next (Cycle 11):** Tasks tab (simple to-do list). Then Cycle 12: skip (done in Cycle 8). Cycle 13: client portal page `/portal/[token]`. Cycle 14+: PWA + polish.
+
+
 
 
 

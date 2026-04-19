@@ -51,6 +51,7 @@ import {
 } from "./actions";
 import { useToast } from "@/components/ui/use-toast";
 import { uploadReportPhoto } from "./upload-client";
+import { AddMemberButton } from "../people/add-member-button";
 
 type Report = {
   id: string;
@@ -71,6 +72,7 @@ type RosterRow = {
 
 type Photo = { id: string; url: string; caption: string | null };
 type Issue = { id: string; title: string; severity: string | null; status: string | null };
+type AvailableContact = { id: string; name: string; trade: string | null; role: string };
 
 export function TodayView({
   projectId,
@@ -78,12 +80,14 @@ export function TodayView({
   roster,
   photos,
   issues,
+  availableContacts,
 }: {
   projectId: string;
   report: Report;
   roster: RosterRow[];
   photos: Photo[];
   issues: Issue[];
+  availableContacts: AvailableContact[];
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -121,7 +125,13 @@ export function TodayView({
   return (
     <div className="space-y-4">
       <BasicsCard projectId={projectId} report={report} />
-      <AttendanceCard projectId={projectId} reportId={report.id} roster={roster} locked={!!report.locked} />
+      <AttendanceCard
+        projectId={projectId}
+        reportId={report.id}
+        roster={roster}
+        locked={!!report.locked}
+        availableContacts={availableContacts}
+      />
       <PhotosCard projectId={projectId} reportId={report.id} photos={photos} locked={!!report.locked} />
       <IssuesCard projectId={projectId} reportId={report.id} issues={issues} locked={!!report.locked} />
       <CloseDayCard projectId={projectId} reportId={report.id} locked={!!report.locked} />
@@ -201,11 +211,13 @@ function AttendanceCard({
   reportId,
   roster,
   locked,
+  availableContacts,
 }: {
   projectId: string;
   reportId: string;
   roster: RosterRow[];
   locked: boolean;
+  availableContacts: AvailableContact[];
 }) {
   const { toast } = useToast();
   const [saving, startSaving] = useTransition();
@@ -234,18 +246,23 @@ function AttendanceCard({
   if (roster.length === 0) {
     return (
       <Card>
-        <CardContent className="p-4 space-y-2">
+        <CardContent className="p-4 space-y-3">
           <div className="flex items-center gap-2 text-sm font-medium">
             <Users className="h-4 w-4 text-muted-foreground" />
             נוכחות
           </div>
           <p className="text-sm text-muted-foreground">
-            עדיין אין עובדים בפרויקט. לחץ{" "}
-            <Link className="text-primary underline" href={`/app/projects/${projectId}/people`}>
-              כאן
-            </Link>{" "}
-            כדי להוסיף.
+            עדיין אין עובדים בפרויקט. הוסף מישהו עכשיו כדי לסמן נוכחות.
           </p>
+          <div className="flex items-center gap-2">
+            <AddMemberButton projectId={projectId} available={availableContacts} />
+            <Link
+              href={`/app/projects/${projectId}/people`}
+              className="text-sm text-muted-foreground hover:underline"
+            >
+              נהל את הצוות
+            </Link>
+          </div>
         </CardContent>
       </Card>
     );
