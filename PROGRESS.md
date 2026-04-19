@@ -144,6 +144,37 @@ Founder is asleep. Autonomous build starting 2026-04-19.
 - Build the core `DailyReportForm` (client component): weather + notes first — these are the two simplest surfaces. Server action to upsert the report.
 - Cycles 7-9 will layer on: attendance (roster + hours), photos (Supabase Storage), issues (+בעיה), close-day, diary list.
 
+---
+
+## Cycle 6 — 2026-04-19 — Daily report, full flow
+Ambitious cycle — landed the entire report UI end-to-end in one pass rather than splitting across 6-9. Cycles 7-9 will now focus on: diary list + past-report view (C7), people tab + contacts flow so attendance has a roster to work with (C8), deep review + polish pass (C9).
+
+**Built:**
+- `today/actions.ts` — server actions: `ensureTodayReport` (idempotent create), `saveReportBasics`, `setReportLocked`, `saveAttendance` (delete+insert to avoid diffing), `addReportPhoto`, `removeReportPhoto`, `createIssue`, `resolveIssue`. All guarded by `assertProjectAccess` which verifies the `projects.user_id` matches.
+- `today/page.tsx` — Server Component that loads the report row, roster (from `project_members` ⋈ `contacts`), attendance, photos, issues in parallel.
+- `today/today-view.tsx` — the UX surface. Five stacked cards:
+  1. **Start Day** (when no report exists) — one big button; post-click refreshes the route.
+  2. **Basics** — weather + notes (large textarea with Hebrew placeholder "מה קרה היום באתר?"), inline save with toast.
+  3. **Attendance** — horizontal scrollable card strip, one card per project member. Tap card to default 8 hours; number input for custom value. Shows "3/5" count. Saves on explicit button.
+  4. **Photos** — native `<input capture="environment">` file picker → client-side Supabase Storage upload → DB row. 3-column grid; delete button per photo with confirm. Enforces 10/day cap.
+  5. **Issues** — "+ בעיה" opens Dialog with title + severity Select. List shows colored dot (red/amber/grey). Inline "mark resolved" check.
+  6. **Close day** — toggles `locked`. When locked, all editors become disabled.
+- `today/upload-client.ts` — browser helper that uploads to `project-media` storage under `projects/<pid>/reports/<rid>/<ts>-<rand>.<ext>` and returns a public URL. Also exposes `uploadReceipt` for Cycle 10.
+- All buttons meet 44px tap target; numeric input uses `inputMode="decimal"`; Hebrew date header shows weekday + full Hebrew date.
+
+**Works:**
+- Build clean. /today is 95.4 kB (driven by Radix Dialog + Select + Toast).
+- Locked mode disables all inputs and hides "add issue" / "add photo" / "delete" buttons.
+
+**Broken/TODO:**
+- Did not test the Storage upload end-to-end; depends on the `project-media` bucket existing and permitting authenticated uploads. Logged as a Cycle 9 check.
+- Attendance UI is missing an obvious "present/absent" checkbox distinct from hours — tapping the card sets 8h; good enough for MVP, revisit in C9.
+- Roster requires `project_members` rows; no UI to add them yet. Cycle 8 (people tab + contacts) resolves this dependency.
+- Issues created from Today don't yet show up on a project-level "all issues" list — only on this report. Acceptable for MVP (issue resolution remains local to the day it was logged).
+
+**Next (Cycle 7):** Diary tab — reverse-chrono list of daily reports per project. Each row: date, day-of-week, notes snippet, counts (attendance, photos, issues), "open" link to a read-only detail page at `/app/projects/[id]/diary/[reportId]`. Also add a "today" chip if the row is today's still-open report.
+
+
 
 
 
