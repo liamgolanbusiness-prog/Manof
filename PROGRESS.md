@@ -174,6 +174,52 @@ Ambitious cycle — landed the entire report UI end-to-end in one pass rather th
 
 **Next (Cycle 7):** Diary tab — reverse-chrono list of daily reports per project. Each row: date, day-of-week, notes snippet, counts (attendance, photos, issues), "open" link to a read-only detail page at `/app/projects/[id]/diary/[reportId]`. Also add a "today" chip if the row is today's still-open report.
 
+---
+
+## Cycle 7 — 2026-04-19 — Diary list + read-only report detail
+**Built:**
+- `/app/projects/[id]/diary/page.tsx` — reverse-chrono list up to 200 reports. Each row: day-of-week + Hebrew date, "היום" chip if today, notes snippet (line-clamp-2), and per-row counts (present workers, photos, open/total issues). Lock icon if closed. Clicking opens detail.
+- `/app/projects/[id]/diary/[reportId]/page.tsx` — read-only report view. Weather card, notes card (preserve line breaks via `whitespace-pre-line`), attendance list with total-hours summary, photo grid (click = open original in new tab), issues list with severity dots.
+- Both pages use ownership check (`projects.user_id = user.id`) to prevent cross-tenant reads.
+
+**Works:**
+- Build clean. Aggregations via a single batched query set (`in("daily_report_id", ids)`).
+
+**Broken/TODO:**
+- Detail page has no "edit" button — for MVP you edit only via /today which redirects to today's date. If a founder needs to edit past reports, we'll add unlock + redirect. Acceptable for MVP.
+
+---
+
+## Cycle 8 — 2026-04-19 — Contacts + People tab (so attendance has a roster)
+**Built:**
+- `/app/contacts` — grouped-by-role list (עובד / קבלן משנה / ספק / לקוח / אחר), card grid with phone tap-to-call and edit pencil. Empty state with prominent CTA.
+- `ContactDialog` — shared dialog for both create and edit. Fields: name (required), role (required), phone (LTR), trade, pay_rate + pay_type (only when worker/subcontractor), notes. Delete button in edit mode with confirm.
+- `/app/projects/[id]/people/page.tsx` — real content. Lists `project_members` with contact info, aggregated total hours (sum across all reports) and total paid-out (sum of payments OUT to this contact on this project). "+" button opens `AddMemberButton` dialog with Select of unassigned contacts and optional role-in-project text field; inline "create new contact" if none available.
+- `RemoveMemberButton` — confirm dialog, removes row but doesn't delete historical attendance.
+- Server actions: `upsertContact`, `deleteContact`, `addProjectMember`, `removeProjectMember` — all scoped to `user_id` / project ownership check.
+
+**Works:**
+- Build clean. Contacts page 137 kB (heavy because of Dialog + Select per row), People 138 kB. Acceptable for now; can code-split Dialog to lazy-load later.
+- Attendance strip on /today auto-populates with the roster from /people. Save flow now has real data to write.
+
+**Broken/TODO:**
+- No search/filter on contacts list. Fine for a founder with <50 contacts.
+- People tab's "total paid" only counts outgoing payments. Doesn't include materials bought through a supplier contact via expenses. Acceptable — expenses and payments are distinct concepts.
+- Device contact import (brief says "skip for MVP, leave TODO"): not done. TODO noted.
+
+**Next (Cycle 9):** Deep review + polish pass. I'll walk רמי's full day in my head again:
+1. Opens app → projects list
+2. Opens a project → "היום" tab
+3. Adds a photo from camera
+4. Taps 3 workers in attendance strip
+5. Types notes
+6. Marks an issue
+7. Closes day
+8. Later opens client portal link
+
+Then fix the worst friction.
+
+
 
 
 
