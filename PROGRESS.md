@@ -261,6 +261,38 @@ Then fix the worst friction.
 
 **Next (Cycle 11):** Tasks tab (simple to-do list). Then Cycle 12: skip (done in Cycle 8). Cycle 13: client portal page `/portal/[token]`. Cycle 14+: PWA + polish.
 
+---
+
+## Cycle 11 — 2026-04-19 — Tasks tab
+**Built:**
+- `/app/projects/[id]/tasks` with four filter tabs: היום / השבוע / אחר כך / בוצע. "היום" bucket also contains overdue tasks (`due_date <= today`).
+- `NewTaskButton` dialog: title (required), assignee (Select from user's contacts), due date, optional description.
+- `TaskRow` with a big square checkbox, strike-through on done, destructive color when overdue, inline delete.
+- Actions: `createTask`, `toggleTask` (writes `completed_at`), `deleteTask`.
+
+**Works:** Build clean, tasks 141 kB.
+
+**Broken/TODO:** No repeating tasks. No subtasks. Fine for MVP.
+
+---
+
+## Cycle 12 — 2026-04-19 — Client portal (`/portal/[token]`)
+**Built:**
+- `/portal/[token]/page.tsx` public unauthenticated route. Uses `createAdminClient` (service role) to bypass RLS since the token itself is the access credential. Lookups `projects WHERE portal_token = token`. Returns 404 if not found.
+- Sections: project name + client + address; progress card (big % + progress bar + start/target dates); photo grid (last 20 photos from `daily_reports → report_photos`, aggregated); financial status (contract value, paid to date, remaining, progress-of-payment bar) — only renders if at least one of those numbers exists; recent updates (last 5 non-empty `notes` from daily reports).
+- `/portal/layout.tsx` — minimal wrapper that inherits RTL from root layout but skips the app header + Toaster (portal shouldn't feel like the app).
+- Middleware matcher already excludes `portal` from auth redirects.
+
+**Works:** Build clean, 92.6 kB first-load — light.
+
+**Broken/TODO:**
+- Photos use `getPublicUrl` — requires the `project-media` bucket to be publicly readable or to serve signed URLs. Flagged in QUESTIONS as a bucket-policy issue the founder should verify.
+- No ability for the client to respond / message back. Out of scope.
+- No visit analytics.
+
+**Next (Cycle 13):** PWA manifest + icons + offline fallback + small polish pass.
+
+
 
 
 
