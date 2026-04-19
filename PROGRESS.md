@@ -350,6 +350,19 @@ Not done but **tracked** — either in QUESTIONS.md or README.md "Known limits":
 
 **Overall**: every brief-item through Phase 9 (PWA + polish) is either done or has a rock-solid skeleton with a documented next step. Phase 10 deliberately skipped per "if time remains".
 
+---
+
+## Cycle 14 — 2026-04-19 — WhatsApp share on report detail
+**Built:**
+- `ShareReportButton` on `/diary/[reportId]` — opens `wa.me/?text=...` with a beautifully formatted Hebrew summary of the day: project name, weekday + date, weather, notes, attendance with total hours, photo count, issues list with "(טופל)" markers on resolved ones.
+- This is the "text to customer / spouse / boss at the end of the day" behavior that has real power for a contractor like רמי — the portal link shares a passive dashboard, this share sends an active summary.
+
+**Works:**
+- Build clean. `/diary/[reportId]` now 109 kB.
+
+**Done for the night.** 17 routes. Typecheck + lint clean. Every commit was a green build. Ready for the founder.
+
+
 
 
 

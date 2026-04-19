@@ -6,6 +6,7 @@ import { formatDate, formatWeekday } from "@/lib/format";
 import { notFound } from "next/navigation";
 import { ChevronRight, Lock, AlertTriangle } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
+import { ShareReportButton } from "./share-report-button";
 
 export default async function ReportDetail({
   params,
@@ -29,6 +30,13 @@ export default async function ReportDetail({
     .eq("project_id", params.id)
     .maybeSingle();
   if (!report) notFound();
+
+  const { data: projectRow } = await supabase
+    .from("projects")
+    .select("name")
+    .eq("id", params.id)
+    .maybeSingle();
+  const projectName = projectRow?.name ?? "פרויקט";
 
   const [atRes, phRes, isRes] = await Promise.all([
     supabase
@@ -73,17 +81,33 @@ export default async function ReportDetail({
         </Link>
       </div>
 
-      <div className="flex items-baseline justify-between gap-2">
-        <div>
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0 flex-1">
           <div className="text-sm text-muted-foreground">{formatWeekday(report.report_date)}</div>
           <h1 className="text-xl font-bold">{formatDate(report.report_date)}</h1>
+          {report.locked ? (
+            <span className="inline-flex items-center gap-1 rounded-full bg-success/10 text-success text-xs font-medium px-2 py-0.5 mt-1">
+              <Lock className="h-3 w-3" />
+              נסגר
+            </span>
+          ) : null}
         </div>
-        {report.locked ? (
-          <span className="inline-flex items-center gap-1 rounded-full bg-success/10 text-success text-xs font-medium px-2 py-0.5">
-            <Lock className="h-3 w-3" />
-            נסגר
-          </span>
-        ) : null}
+        <ShareReportButton
+          projectName={projectName}
+          reportDate={report.report_date}
+          weather={report.weather}
+          notes={report.notes}
+          attendance={(atRes.data ?? []).map((a) => ({
+            name: contactNames[a.contact_id] ?? "—",
+            hours: a.hours_worked ?? 0,
+          }))}
+          photoCount={(phRes.data ?? []).length}
+          issues={(isRes.data ?? []).map((i) => ({
+            title: i.title,
+            resolved: i.status === "resolved",
+          }))}
+          totalHours={totalHours}
+        />
       </div>
 
       {report.weather ? (
