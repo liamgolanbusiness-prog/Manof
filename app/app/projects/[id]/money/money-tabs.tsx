@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Plus, Receipt, Banknote, ArrowUpRight, ArrowDownLeft, ExternalLink, Trash2 } from "lucide-react";
+import { Plus, Receipt, Banknote, ArrowUpRight, ArrowDownLeft, ExternalLink, Trash2, Download } from "lucide-react";
 import { EmptyState } from "@/components/empty-state";
 import { formatCurrency, formatDateShort } from "@/lib/format";
 import { ExpenseDialog } from "./expense-dialog";
@@ -55,29 +55,40 @@ export function MoneyTabs({
           <TabsTrigger value="expenses">הוצאות ({expenses.length})</TabsTrigger>
           <TabsTrigger value="payments">תשלומים ({payments.length})</TabsTrigger>
         </TabsList>
-        {tab === "expenses" ? (
-          <ExpenseDialog
-            projectId={projectId}
-            contacts={contacts}
-            trigger={
-              <Button size="sm" className="tap gap-1">
-                <Plus className="h-4 w-4" />
-                הוצאה
-              </Button>
-            }
-          />
-        ) : (
-          <PaymentDialog
-            projectId={projectId}
-            contacts={contacts}
-            trigger={
-              <Button size="sm" className="tap gap-1">
-                <Plus className="h-4 w-4" />
-                תשלום
-              </Button>
-            }
-          />
-        )}
+        <div className="flex items-center gap-1">
+          <a
+            href={`/api/projects/${projectId}/export?kind=${tab}`}
+            download
+            className="tap grid place-items-center h-9 w-9 rounded-lg text-muted-foreground hover:bg-muted"
+            aria-label="הורד CSV"
+            title="הורד CSV"
+          >
+            <Download className="h-4 w-4" />
+          </a>
+          {tab === "expenses" ? (
+            <ExpenseDialog
+              projectId={projectId}
+              contacts={contacts}
+              trigger={
+                <Button size="sm" className="tap gap-1">
+                  <Plus className="h-4 w-4" />
+                  הוצאה
+                </Button>
+              }
+            />
+          ) : (
+            <PaymentDialog
+              projectId={projectId}
+              contacts={contacts}
+              trigger={
+                <Button size="sm" className="tap gap-1">
+                  <Plus className="h-4 w-4" />
+                  תשלום
+                </Button>
+              }
+            />
+          )}
+        </div>
       </div>
 
       <TabsContent value="expenses" className="mt-3">

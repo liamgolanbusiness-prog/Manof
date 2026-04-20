@@ -12,7 +12,7 @@ export async function loginAction(
 ): Promise<AuthState> {
   const email = String(formData.get("email") ?? "").trim();
   const password = String(formData.get("password") ?? "");
-  const next = String(formData.get("next") ?? "/app/projects");
+  const next = String(formData.get("next") ?? "/app");
 
   if (!email || !password) {
     return { error: "אימייל וסיסמה נדרשים" };

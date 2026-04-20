@@ -4,7 +4,7 @@
   "description": "אפליקציית ניהול פרויקטים לקבלני שיפוצים — יומן, הוצאות ולקוחות במקום אחד",
   "lang": "he",
   "dir": "rtl",
-  "start_url": "/app/projects",
+  "start_url": "/app",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait",

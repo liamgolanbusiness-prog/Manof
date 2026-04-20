@@ -44,7 +44,7 @@ export async function updateSession(request: NextRequest) {
   // Bounce authed users away from /login, /signup
   if ((pathname === "/login" || pathname === "/signup") && user) {
     const url = request.nextUrl.clone();
-    url.pathname = "/app/projects";
+    url.pathname = "/app";
     url.searchParams.delete("next");
     return NextResponse.redirect(url);
   }

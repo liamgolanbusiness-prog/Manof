@@ -31,6 +31,25 @@ export async function uploadReportPhoto(
   return pub.publicUrl;
 }
 
+export async function uploadVoiceNote(
+  projectId: string,
+  reportId: string,
+  blob: Blob,
+  ext: string
+): Promise<string> {
+  const supabase = createClient();
+  const rand = Math.random().toString(36).slice(2, 10);
+  const path = `projects/${projectId}/reports/${reportId}/voice-${Date.now()}-${rand}.${ext}`;
+  const { error } = await supabase.storage.from("project-media").upload(path, blob, {
+    cacheControl: "3600",
+    upsert: false,
+    contentType: blob.type || "audio/webm",
+  });
+  if (error) throw new Error(error.message);
+  const { data: pub } = supabase.storage.from("project-media").getPublicUrl(path);
+  return pub.publicUrl;
+}
+
 export async function uploadReceipt(
   projectId: string,
   file: File

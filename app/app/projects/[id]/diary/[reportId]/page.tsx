@@ -25,7 +25,7 @@ export default async function ReportDetail({
 
   const { data: report } = await supabase
     .from("daily_reports")
-    .select("id, report_date, weather, notes, locked, updated_at")
+    .select("id, report_date, weather, notes, locked, updated_at, voice_note_url")
     .eq("id", params.reportId)
     .eq("project_id", params.id)
     .maybeSingle();
@@ -124,6 +124,15 @@ export default async function ReportDetail({
           <CardContent className="p-4 text-sm whitespace-pre-line">
             <div className="text-muted-foreground text-xs mb-1">הערות</div>
             {report.notes}
+          </CardContent>
+        </Card>
+      ) : null}
+
+      {report.voice_note_url ? (
+        <Card>
+          <CardContent className="p-4 space-y-2">
+            <div className="text-muted-foreground text-xs">הודעה קולית</div>
+            <audio controls src={report.voice_note_url} className="w-full" preload="metadata" />
           </CardContent>
         </Card>
       ) : null}

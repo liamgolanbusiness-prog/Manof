@@ -14,7 +14,7 @@ export default function LoginPage({
         <CardDescription>התחבר כדי להמשיך לנהל את הפרויקטים שלך</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        <LoginForm next={searchParams.next ?? "/app/projects"} />
+        <LoginForm next={searchParams.next ?? "/app"} />
         <p className="text-sm text-muted-foreground text-center">
           עדיין אין לך חשבון?{" "}
           <Link href="/signup" className="text-primary font-medium hover:underline">

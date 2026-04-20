@@ -163,6 +163,21 @@ export async function createIssue(
   revalidatePath(`/app/projects/${projectId}/today`);
 }
 
+export async function setVoiceNote(
+  projectId: string,
+  reportId: string,
+  url: string | null
+) {
+  const { supabase } = await assertProjectAccess(projectId);
+  const { error } = await supabase
+    .from("daily_reports")
+    .update({ voice_note_url: url, updated_at: new Date().toISOString() })
+    .eq("id", reportId)
+    .eq("project_id", projectId);
+  if (error) throw new Error(error.message);
+  revalidatePath(`/app/projects/${projectId}/today`);
+}
+
 export async function resolveIssue(projectId: string, issueId: string) {
   const { supabase } = await assertProjectAccess(projectId);
   const { error } = await supabase

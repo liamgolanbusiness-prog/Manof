@@ -24,7 +24,7 @@ export default async function AppLayout({
     <div className="min-h-screen bg-muted/20">
       <header className="sticky top-0 z-30 bg-background/95 backdrop-blur border-b">
         <div className="container h-14 flex items-center justify-between gap-2">
-          <Link href="/app/projects" className="flex items-center gap-2 font-bold">
+          <Link href="/app" className="flex items-center gap-2 font-bold">
             <HardHat className="h-5 w-5 text-primary" />
             <span className="hidden sm:inline">עתר</span>
           </Link>

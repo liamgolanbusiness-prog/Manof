@@ -21,7 +21,7 @@ export default async function TodayPage({ params }: { params: { id: string } }) 
   const [reportRes, membersRes] = await Promise.all([
     supabase
       .from("daily_reports")
-      .select("id, weather, notes, locked, report_date, updated_at")
+      .select("id, weather, notes, locked, report_date, updated_at, voice_note_url")
       .eq("project_id", params.id)
       .eq("report_date", today)
       .maybeSingle(),

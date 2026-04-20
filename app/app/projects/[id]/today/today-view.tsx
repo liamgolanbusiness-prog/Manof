@@ -52,6 +52,7 @@ import {
 import { useToast } from "@/components/ui/use-toast";
 import { uploadReportPhoto } from "./upload-client";
 import { AddMemberButton } from "../people/add-member-button";
+import { VoiceCard } from "./voice-card";
 
 type Report = {
   id: string;
@@ -60,6 +61,7 @@ type Report = {
   locked: boolean | null;
   report_date: string;
   updated_at: string | null;
+  voice_note_url: string | null;
 } | null;
 
 type RosterRow = {
@@ -125,6 +127,12 @@ export function TodayView({
   return (
     <div className="space-y-4">
       <BasicsCard projectId={projectId} report={report} />
+      <VoiceCard
+        projectId={projectId}
+        reportId={report.id}
+        voiceNoteUrl={report.voice_note_url}
+        locked={!!report.locked}
+      />
       <AttendanceCard
         projectId={projectId}
         reportId={report.id}
