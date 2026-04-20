@@ -1,8 +1,10 @@
 "use server";
 
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { checkRateLimit, clientIpFromHeaders } from "@/lib/rate-limit";
 
 export type AuthState = { error?: string; notice?: string } | null;
 
@@ -10,12 +12,23 @@ export async function loginAction(
   _prev: AuthState,
   formData: FormData
 ): Promise<AuthState> {
-  const email = String(formData.get("email") ?? "").trim();
+  const email = String(formData.get("email") ?? "").trim().toLowerCase();
   const password = String(formData.get("password") ?? "");
   const next = String(formData.get("next") ?? "/app");
 
   if (!email || !password) {
     return { error: "אימייל וסיסמה נדרשים" };
+  }
+
+  const ip = clientIpFromHeaders(headers());
+  // Per-IP: 10 attempts / 10 min. Per-email: 5 attempts / 10 min.
+  const byIp = checkRateLimit(`login:ip:${ip}`, 10, 10 * 60_000);
+  const byEmail = checkRateLimit(`login:email:${email}`, 5, 10 * 60_000);
+  if (!byIp.ok || !byEmail.ok) {
+    const seconds = Math.max(byIp.retryAfterSec, byEmail.retryAfterSec);
+    return {
+      error: `יותר מדי ניסיונות. נסה שוב בעוד ${Math.ceil(seconds / 60)} דקות.`,
+    };
   }
 
   const supabase = createClient();
@@ -33,15 +46,23 @@ export async function signupAction(
   _prev: AuthState,
   formData: FormData
 ): Promise<AuthState> {
-  const email = String(formData.get("email") ?? "").trim();
+  const email = String(formData.get("email") ?? "").trim().toLowerCase();
   const password = String(formData.get("password") ?? "");
   const fullName = String(formData.get("full_name") ?? "").trim();
 
   if (!email || !password || !fullName) {
     return { error: "שם מלא, אימייל וסיסמה נדרשים" };
   }
-  if (password.length < 6) {
-    return { error: "הסיסמה חייבת להיות לפחות 6 תווים" };
+  if (password.length < 8) {
+    return { error: "הסיסמה חייבת להיות לפחות 8 תווים" };
+  }
+
+  const ip = clientIpFromHeaders(headers());
+  const byIp = checkRateLimit(`signup:ip:${ip}`, 5, 60 * 60_000); // 5/hour per IP
+  if (!byIp.ok) {
+    return {
+      error: `יותר מדי הרשמות מכתובת זו. נסה שוב בעוד ${Math.ceil(byIp.retryAfterSec / 60)} דקות.`,
+    };
   }
 
   const supabase = createClient();
@@ -87,6 +108,58 @@ export async function logoutAction() {
   redirect("/login");
 }
 
+export async function requestPasswordResetAction(
+  _prev: AuthState,
+  formData: FormData
+): Promise<AuthState> {
+  const email = String(formData.get("email") ?? "").trim().toLowerCase();
+  if (!email) return { error: "אימייל נדרש" };
+
+  const ip = clientIpFromHeaders(headers());
+  // Rate limit reset requests: 3 per email + 10 per IP per hour.
+  const byIp = checkRateLimit(`pwreset:ip:${ip}`, 10, 60 * 60_000);
+  const byEmail = checkRateLimit(`pwreset:email:${email}`, 3, 60 * 60_000);
+  if (!byIp.ok || !byEmail.ok) {
+    return { error: "יותר מדי בקשות. נסה שוב בעוד שעה." };
+  }
+
+  const supabase = createClient();
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "";
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: appUrl ? `${appUrl}/auth/callback?next=/update-password` : undefined,
+  });
+  // Always return a generic notice — don't leak account existence.
+  if (error && !error.message.toLowerCase().includes("not found")) {
+    return { error: translateAuthError(error.message) };
+  }
+  return {
+    notice:
+      "אם קיים חשבון עם האימייל הזה, נשלח קישור לאיפוס סיסמה. בדוק את תיבת הדואר.",
+  };
+}
+
+export async function updatePasswordAction(
+  _prev: AuthState,
+  formData: FormData
+): Promise<AuthState> {
+  const password = String(formData.get("password") ?? "");
+  const confirm = String(formData.get("confirm") ?? "");
+  if (password.length < 8) return { error: "הסיסמה חייבת להיות לפחות 8 תווים" };
+  if (password !== confirm) return { error: "הסיסמאות לא זהות" };
+
+  const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "הקישור פג תוקף. בקש קישור חדש." };
+
+  const { error } = await supabase.auth.updateUser({ password });
+  if (error) return { error: translateAuthError(error.message) };
+
+  revalidatePath("/", "layout");
+  redirect("/app");
+}
+
 function translateAuthError(msg: string): string {
   const m = msg.toLowerCase();
   if (m.includes("invalid login")) return "אימייל או סיסמה שגויים";
@@ -96,5 +169,7 @@ function translateAuthError(msg: string): string {
   if (m.includes("email logins are disabled") || m.includes("email signups are disabled"))
     return "הרשמה באימייל מושבתת בצד השרת — פנה למנהל המערכת";
   if (m.includes("signups not allowed")) return "הרשמות חדשות מושבתות כרגע";
+  if (m.includes("same password")) return "בחר סיסמה שונה מהקודמת";
+  if (m.includes("rate limit")) return "יותר מדי ניסיונות. נסה שוב מאוחר יותר.";
   return msg;
 }

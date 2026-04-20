@@ -15,12 +15,17 @@ export default function LoginPage({
       </CardHeader>
       <CardContent className="space-y-4">
         <LoginForm next={searchParams.next ?? "/app"} />
-        <p className="text-sm text-muted-foreground text-center">
-          עדיין אין לך חשבון?{" "}
+        <div className="flex items-center justify-between text-sm">
+          <Link
+            href="/reset-password"
+            className="text-muted-foreground hover:text-primary hover:underline"
+          >
+            שכחתי סיסמה
+          </Link>
           <Link href="/signup" className="text-primary font-medium hover:underline">
             הרשמה
           </Link>
-        </p>
+        </div>
       </CardContent>
     </Card>
   );
