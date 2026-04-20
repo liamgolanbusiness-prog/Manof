@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
+import { ServiceWorkerRegister } from "@/components/sw-register";
 
 export const metadata: Metadata = {
   title: "עתר — ניהול אתרי בנייה",
@@ -37,6 +38,7 @@ export default function RootLayout({
       <body className="min-h-screen bg-background">
         <div className="phone-frame">{children}</div>
         <Toaster />
+        <ServiceWorkerRegister />
       </body>
     </html>
   );
