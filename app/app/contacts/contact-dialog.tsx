@@ -141,6 +141,7 @@ export function ContactDialog({
                 type="tel"
                 inputMode="tel"
                 dir="ltr"
+                placeholder="054-123-4567"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
               />

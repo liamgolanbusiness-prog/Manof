@@ -18,7 +18,7 @@ Built overnight against the spec in `OVERNIGHT_BRIEF.md`. Read `PROGRESS.md` cyc
 ```bash
 npm install
 npm run dev
-# http://localhost:3000
+# http://localhost:4000
 ```
 
 ## Environment (`.env.local`)
@@ -28,7 +28,7 @@ NEXT_PUBLIC_SUPABASE_URL=https://<project>.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=<anon key>
 SUPABASE_SERVICE_ROLE_KEY=<service role key>   # server-only; used by the public portal route
 NEXT_PUBLIC_APP_NAME=Atar
-NEXT_PUBLIC_APP_URL=http://localhost:3000       # base for portal share URLs
+NEXT_PUBLIC_APP_URL=http://localhost:4000       # base for portal share URLs
 ```
 
 See `.env.local.example`.

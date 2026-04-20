@@ -29,6 +29,7 @@ export function ProjectForm() {
           type="tel"
           inputMode="tel"
           dir="ltr"
+          placeholder="054-123-4567"
         />
       </div>
       <div className="grid grid-cols-2 gap-3">

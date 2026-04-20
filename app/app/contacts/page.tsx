@@ -5,6 +5,7 @@ import { EmptyState } from "@/components/empty-state";
 import { Button } from "@/components/ui/button";
 import { Users, Plus, Phone, Pencil } from "lucide-react";
 import { ContactDialog } from "./contact-dialog";
+import { formatIsraeliPhone } from "@/lib/phone";
 
 const ROLE_LABELS: Record<string, string> = {
   worker: "עובד",
@@ -66,11 +67,11 @@ export default async function ContactsPage() {
                   >
                     <div className="min-w-0 flex-1">
                       <div className="font-medium truncate">{c.name}</div>
-                      {c.trade ? (
-                        <div className="text-xs text-muted-foreground truncate">
-                          {c.trade}
-                        </div>
-                      ) : null}
+                      <div className="text-xs text-muted-foreground truncate">
+                        {[c.trade, c.phone ? formatIsraeliPhone(c.phone) : null]
+                          .filter(Boolean)
+                          .join(" · ")}
+                      </div>
                     </div>
                     <div className="flex items-center gap-1">
                       {c.phone ? (

@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { requireUser } from "@/lib/auth";
+import { normalizeIsraeliPhone } from "@/lib/phone";
 
 export type ContactFormState = { error?: string; ok?: boolean; id?: string } | null;
 
@@ -23,7 +24,12 @@ export async function upsertContact(
   const id = (formData.get("id") || "").toString() || null;
   const name = String(formData.get("name") ?? "").trim();
   const role = String(formData.get("role") ?? "worker").trim();
-  const phone = String(formData.get("phone") ?? "").trim() || null;
+  const phoneInput = String(formData.get("phone") ?? "").trim();
+  let phone: string | null = null;
+  if (phoneInput) {
+    phone = normalizeIsraeliPhone(phoneInput);
+    if (!phone) return { error: "מספר טלפון לא תקין (נדרש מספר ישראלי)" };
+  }
   const trade = String(formData.get("trade") ?? "").trim() || null;
   const pay_rate = parseAmount(formData.get("pay_rate"));
   const pay_type = String(formData.get("pay_type") ?? "").trim() || null;

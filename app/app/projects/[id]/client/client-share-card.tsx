@@ -20,7 +20,7 @@ export function ClientShareCard({
 
   const base =
     process.env.NEXT_PUBLIC_APP_URL ||
-    (typeof window !== "undefined" ? window.location.origin : "http://localhost:3000");
+    (typeof window !== "undefined" ? window.location.origin : "http://localhost:4000");
   const portalUrl = `${base.replace(/\/$/, "")}/portal/${project.portal_token}`;
   const message = `שלום${project.client_name ? ` ${project.client_name}` : ""}, הנה קישור לעדכון חי על הפרויקט "${project.name}":\n${portalUrl}`;
 
