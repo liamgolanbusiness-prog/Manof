@@ -362,9 +362,71 @@ Not done but **tracked** — either in QUESTIONS.md or README.md "Known limits":
 
 **Done for the night.** 17 routes. Typecheck + lint clean. Every commit was a green build. Ready for the founder.
 
+---
 
+## Cycle 15 — 2026-04-20 — Resolve founder answers
+**Built:**
+- Founder-answer sweep after first review. Dev port confirmed **4000** (`next dev -p 4000`).
+- `supabase/migrations/0001_baseline.sql` — full schema + RLS + triggers + signup trigger, re-created from the live OpenAPI introspection (best-effort — run `supabase db pull` for byte-parity).
+- `lib/phone.ts` — Israeli-only phone validation/normalization (`normalizeIsraeliPhone`, `isValidIsraeliPhone`, `formatIsraeliPhone`). Contacts + project-create + project-settings server actions reject non-Israeli numbers with Hebrew error. Display format `054-123-4567`.
+- `supabase/migrations/0002_daily_reports_unique.sql` — `UNIQUE (project_id, report_date)` on `daily_reports` per founder Q10.
 
+**Works:** Build + lint clean.
 
+---
+
+## Cycle 16 — 2026-04-20 — Phone-frame desktop wrapper
+**Built:**
+- `.phone-frame` CSS utility on `app/globals.css`; at `md:` breakpoint the app is centered in a ~420 px rounded column over a subtle gradient body bg, edge-to-edge on real phones. Toaster stays outside the frame using fixed positioning.
+
+**Works:** Build clean. No behavior change on mobile.
+
+---
+
+## Cycle 17 — 2026-04-20 — Dashboard + CSV export + voice notes
+**Built:**
+- `/app` dashboard — 5 KPI cards (active projects, photos today, expenses this week, open issues, tasks due today) + recent-active-projects grid. Logo and post-login redirect now point here; manifest `start_url` updated.
+- `/api/projects/[id]/export?kind=expenses|payments` — UTF-8-BOM CSV endpoint (Hebrew-safe in Excel). Download icon in money-tab header, respects the active sub-tab.
+- Voice notes on `/today` — `MediaRecorder` VoiceCard, opus/webm (falls back to mp4 on iOS Safari), mm:ss counter, upload to `project-media/projects/<pid>/reports/<rid>/voice-<ts>.webm`, saved on `daily_reports.voice_note_url`. Playback via `<audio>` on today + diary detail. Re-record, delete, and locked-report disable flows included.
+
+**Works:** Build clean. New routes: `/app` dashboard, `/api/projects/[id]/export`.
+
+---
+
+## Cycle 18 — 2026-04-20 — Offline-first service worker
+**Built:**
+- `public/sw.js` — cache-first for `/_next/static`, stale-while-revalidate for Supabase storage media, network-first with offline fallback for navigations, bypass for `/api` and Supabase API.
+- `app/offline/page.tsx` — static Hebrew offline page with "try again".
+- `components/sw-register.tsx` — registers SW only in production so dev HMR stays clean.
+
+**Works:** Build clean. Read-path only; writes still require network, as brief calls out.
+
+---
+
+## Cycle 19 — 2026-04-20 — Labor settlement + email-confirm flow + brand rename
+**Built:**
+- **Labor settlement** — the founder's #1 ask after first review: "I can see what each worker worked, but nothing about what I owe them or paid them."
+  - `supabase/migrations/0002_labor_settlement.sql` — adds `expenses.paid_at` (timestamptz) + new `worker_payments` table (project_id, contact_id, period_start/end, amount, paid_at, notes) with RLS (`user_id = auth.uid()`).
+  - `lib/labor.ts` — `getProjectLabor(supabase, projectId)` aggregates attendance × `contacts.pay_rate` per worker (daily pay_type counts days, otherwise hours), subtracts paid `worker_payments` + labor-category expenses against the same contact, and returns `{ outstanding, settled, totalLaborGross, laborExpenseIds }`.
+  - Money KPIs: replaced "תזרים נטו" with "**חוב פתוח**" (open debt = unpaid expenses + outstanding labor). Total `הוצא` now includes gross labor.
+  - Money expenses tab: two filter pills **לא שולם / שולם**. Outstanding-labor rows (hard-hat icon + name + hours×rate + period) have a **סגור חודש** button that writes a `worker_payments` row. Expense rows have check (mark paid) / undo (mark unpaid) actions. Settled rows can be undone.
+  - Actions: `markExpensePaid`, `settleWorker`, `deleteWorkerPayment`.
+  - Worker role is now pickable in the expense-supplier dropdown (so you can log a cash payment as an expense against a worker if you prefer that flow).
+- **Email-confirm flow** — supports Supabase projects where "Confirm email" is ON (founder may toggle it back on in prod):
+  - `app/auth/callback/route.ts` — exchanges the PKCE `code` for a session, redirects to `next ?? /app/projects/new`; failures bounce back to `/login?error=...`.
+  - `signupAction` now passes `emailRedirectTo: ${NEXT_PUBLIC_APP_URL}/auth/callback` and returns a soft `notice` (not `error`) when the session is null post-signup; signup form renders the notice as a green "check your email" card.
+  - Extra translations for "email signups disabled" / "signups not allowed".
+- **Rebrand עתר → אתר.** The original brand was a play on "request" (עתר); after review, `אתר` ("site") — literally matches the product category (construction sites, אתרי בנייה) — is clearer and more memorable for קבלנים. Changed across layout titles, auth/app/portal headers, footer, manifest name + short_name, appleWebApp title.
+
+**Works:**
+- Build: ✓ 21 routes, 0 errors, 0 warnings. `/app/projects/[id]/money` 210 kB first-load (slightly up from labor rows; still acceptable).
+- Typecheck clean. Lint clean.
+
+**Broken/TODO:**
+- Apply migration `0002_labor_settlement.sql` before Money tab works in prod (new `worker_payments` table + `expenses.paid_at` column). README already documents "apply migrations in order" per founder Q2.
+- Outstanding labor uses the worker's *current* `pay_rate`, not a historical snapshot. If a founder raises a worker's rate mid-project, past weeks recompute at the new rate. Acceptable for MVP (founder can settle before changing the rate).
+
+**Done.** 21 routes. Clean build, clean lint, clean typecheck. Handoff complete.
 
 
 

@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 
-export type AuthState = { error?: string } | null;
+export type AuthState = { error?: string; notice?: string } | null;
 
 export async function loginAction(
   _prev: AuthState,
@@ -45,10 +45,14 @@ export async function signupAction(
   }
 
   const supabase = createClient();
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "";
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
-    options: { data: { full_name: fullName } },
+    options: {
+      data: { full_name: fullName },
+      emailRedirectTo: appUrl ? `${appUrl}/auth/callback` : undefined,
+    },
   });
 
   if (error) {
@@ -58,8 +62,8 @@ export async function signupAction(
   // If email confirmation is enabled Supabase returns a session=null response.
   if (!data.session) {
     return {
-      error:
-        "החשבון נוצר, אך דרוש אישור במייל. פתח את תיבת הדואר וחזור כדי להיכנס.",
+      notice:
+        "נשלח אליך אימייל לאישור החשבון. פתח את הקישור במייל כדי להשלים את ההרשמה.",
     };
   }
 
@@ -89,5 +93,8 @@ function translateAuthError(msg: string): string {
   if (m.includes("user already registered")) return "החשבון כבר קיים — התחבר במקום להירשם";
   if (m.includes("password should be")) return "הסיסמה חלשה מדי";
   if (m.includes("email not confirmed")) return "האימייל לא אושר עדיין — בדוק את תיבת הדואר";
+  if (m.includes("email logins are disabled") || m.includes("email signups are disabled"))
+    return "הרשמה באימייל מושבתת בצד השרת — פנה למנהל המערכת";
+  if (m.includes("signups not allowed")) return "הרשמות חדשות מושבתות כרגע";
   return msg;
 }

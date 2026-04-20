@@ -12,7 +12,7 @@ export default function AuthLayout({
         <div className="container h-14 flex items-center">
           <Link href="/" className="flex items-center gap-2 font-bold">
             <HardHat className="h-5 w-5 text-primary" />
-            עתר
+            אתר
           </Link>
         </div>
       </header>

@@ -4,14 +4,14 @@ import { Toaster } from "@/components/ui/toaster";
 import { ServiceWorkerRegister } from "@/components/sw-register";
 
 export const metadata: Metadata = {
-  title: "עתר — ניהול אתרי בנייה",
+  title: "אתר — ניהול אתרי בנייה",
   description: "אפליקציית ניהול פרויקטים לקבלני שיפוצים — יומן, הוצאות ולקוחות במקום אחד",
   manifest: "/manifest.json",
   applicationName: "Atar",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "עתר",
+    title: "אתר",
   },
   icons: {
     icon: [{ url: "/favicon.svg", type: "image/svg+xml" }],

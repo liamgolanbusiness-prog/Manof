@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { requireUser } from "@/lib/auth";
 import { formatCurrency } from "@/lib/format";
+import { getProjectLabor } from "@/lib/labor";
 import { notFound } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
 import { MoneyTabs } from "./money-tabs";
@@ -16,11 +17,11 @@ export default async function MoneyPage({ params }: { params: { id: string } }) 
     .maybeSingle();
   if (!project) notFound();
 
-  const [expRes, payRes, contactsRes] = await Promise.all([
+  const [expRes, payRes, contactsRes, labor] = await Promise.all([
     supabase
       .from("expenses")
       .select(
-        "id, amount, category, supplier_contact_id, receipt_photo_url, paid_by, payment_method, expense_date, notes, created_at"
+        "id, amount, category, supplier_contact_id, receipt_photo_url, paid_by, payment_method, expense_date, notes, paid_at, created_at"
       )
       .eq("project_id", params.id)
       .order("expense_date", { ascending: false }),
@@ -36,6 +37,7 @@ export default async function MoneyPage({ params }: { params: { id: string } }) 
       .select("id, name, role, trade, phone")
       .eq("user_id", user.id)
       .order("name", { ascending: true }),
+    getProjectLabor(supabase, params.id),
   ]);
 
   const expenses = expRes.data ?? [];
@@ -44,7 +46,18 @@ export default async function MoneyPage({ params }: { params: { id: string } }) 
   const contactsById: Record<string, (typeof contacts)[number]> = {};
   for (const c of contacts) contactsById[c.id] = c;
 
-  const totalExpenses = expenses.reduce((s, e) => s + Number(e.amount), 0);
+  // Exclude labor-category expenses linked to a worker — they're already
+  // inside labor.totalLaborGross, and their effect is reflected in the
+  // per-worker `outstanding` calculation.
+  const nonLaborExpenses = expenses.filter((e) => !labor.laborExpenseIds.has(e.id));
+  const totalExpenses =
+    nonLaborExpenses.reduce((s, e) => s + Number(e.amount), 0) +
+    labor.totalLaborGross;
+  const totalOutstanding =
+    nonLaborExpenses
+      .filter((e) => !e.paid_at)
+      .reduce((s, e) => s + Number(e.amount), 0) +
+    labor.outstanding.reduce((s, l) => s + l.outstandingAmount, 0);
   const paymentsIn = payments
     .filter((p) => p.direction === "in")
     .reduce((s, p) => s + Number(p.amount), 0);
@@ -67,9 +80,9 @@ export default async function MoneyPage({ params }: { params: { id: string } }) 
         <KPI label="התקבל מלקוח" value={formatCurrency(paymentsIn)} tone="success" />
         <KPI label="שולם לאחרים" value={formatCurrency(paymentsOut)} tone="warning" />
         <KPI
-          label="תזרים נטו"
-          value={formatCurrency(paymentsIn - paymentsOut)}
-          tone={paymentsIn - paymentsOut < 0 ? "destructive" : "success"}
+          label="חוב פתוח"
+          value={formatCurrency(totalOutstanding)}
+          tone={totalOutstanding > 0 ? "warning" : "muted"}
         />
       </div>
 
@@ -78,6 +91,8 @@ export default async function MoneyPage({ params }: { params: { id: string } }) 
         expenses={expenses}
         payments={payments}
         contacts={contacts}
+        outstandingLabor={labor.outstanding}
+        settledLabor={labor.settled}
       />
     </div>
   );

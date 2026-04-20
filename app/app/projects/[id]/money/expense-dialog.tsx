@@ -76,7 +76,7 @@ export function ExpenseDialog({
   const [receiptUrl, setReceiptUrl] = useState<string | null>(null);
 
   const supplierOptions = contacts.filter((c) =>
-    ["supplier", "subcontractor", "other"].includes(c.role)
+    ["supplier", "subcontractor", "worker", "other"].includes(c.role)
   );
 
   function reset() {

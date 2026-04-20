@@ -9,7 +9,7 @@ export default function LandingPage() {
         <div className="container flex h-14 items-center justify-between">
           <div className="flex items-center gap-2 font-bold text-lg">
             <HardHat className="h-6 w-6 text-primary" />
-            עתר
+            אתר
           </div>
           <nav className="flex items-center gap-2">
             <Link href="/login">
@@ -66,7 +66,7 @@ export default function LandingPage() {
 
       <footer className="border-t py-6">
         <div className="container text-center text-sm text-muted-foreground">
-          עתר © {new Date().getFullYear()}
+          אתר © {new Date().getFullYear()}
         </div>
       </footer>
     </main>

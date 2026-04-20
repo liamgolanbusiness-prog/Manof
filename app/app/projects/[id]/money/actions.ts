@@ -99,3 +99,47 @@ export async function deletePayment(projectId: string, id: string) {
   if (error) throw new Error(error.message);
   revalidatePath(`/app/projects/${projectId}/money`);
 }
+
+export async function markExpensePaid(
+  projectId: string,
+  expenseId: string,
+  paid: boolean
+) {
+  const { supabase } = await assertProjectAccess(projectId);
+  const { error } = await supabase
+    .from("expenses")
+    .update({ paid_at: paid ? new Date().toISOString() : null })
+    .eq("id", expenseId);
+  if (error) throw new Error(error.message);
+  revalidatePath(`/app/projects/${projectId}/money`);
+}
+
+export async function settleWorker(input: {
+  projectId: string;
+  contactId: string;
+  periodStart: string;
+  periodEnd: string;
+  amount: number;
+  notes?: string | null;
+}) {
+  const { user, supabase } = await assertProjectAccess(input.projectId);
+  if (!(input.amount > 0)) throw new Error("סכום לא תקין");
+  const { error } = await supabase.from("worker_payments").insert({
+    project_id: input.projectId,
+    user_id: user.id,
+    contact_id: input.contactId,
+    period_start: input.periodStart,
+    period_end: input.periodEnd,
+    amount: input.amount,
+    notes: input.notes ?? null,
+  });
+  if (error) throw new Error(error.message);
+  revalidatePath(`/app/projects/${input.projectId}/money`);
+}
+
+export async function deleteWorkerPayment(projectId: string, id: string) {
+  const { supabase } = await assertProjectAccess(projectId);
+  const { error } = await supabase.from("worker_payments").delete().eq("id", id);
+  if (error) throw new Error(error.message);
+  revalidatePath(`/app/projects/${projectId}/money`);
+}

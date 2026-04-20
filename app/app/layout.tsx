@@ -26,7 +26,7 @@ export default async function AppLayout({
         <div className="container h-14 flex items-center justify-between gap-2">
           <Link href="/app" className="flex items-center gap-2 font-bold">
             <HardHat className="h-5 w-5 text-primary" />
-            <span className="hidden sm:inline">עתר</span>
+            <span className="hidden sm:inline">אתר</span>
           </Link>
           <nav className="flex items-center gap-1">
             <Link href="/app/projects/new">

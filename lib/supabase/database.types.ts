@@ -313,6 +313,7 @@ export interface Database {
           payment_method: string | null;
           expense_date: ISODate;
           notes: string | null;
+          paid_at: Timestamp | null;
           created_at: Timestamp | null;
         };
         Insert: {
@@ -327,6 +328,7 @@ export interface Database {
           payment_method?: string | null;
           expense_date?: ISODate;
           notes?: string | null;
+          paid_at?: Timestamp | null;
           created_at?: Timestamp | null;
         };
         Update: {
@@ -340,6 +342,46 @@ export interface Database {
           paid_by?: string | null;
           payment_method?: string | null;
           expense_date?: ISODate;
+          notes?: string | null;
+          paid_at?: Timestamp | null;
+          created_at?: Timestamp | null;
+        };
+        Relationships: [];
+      };
+      worker_payments: {
+        Row: {
+          id: string;
+          project_id: string;
+          user_id: string;
+          contact_id: string;
+          period_start: ISODate;
+          period_end: ISODate;
+          amount: number;
+          paid_at: Timestamp;
+          notes: string | null;
+          created_at: Timestamp | null;
+        };
+        Insert: {
+          id?: string;
+          project_id: string;
+          user_id: string;
+          contact_id: string;
+          period_start: ISODate;
+          period_end: ISODate;
+          amount: number;
+          paid_at?: Timestamp;
+          notes?: string | null;
+          created_at?: Timestamp | null;
+        };
+        Update: {
+          id?: string;
+          project_id?: string;
+          user_id?: string;
+          contact_id?: string;
+          period_start?: ISODate;
+          period_end?: ISODate;
+          amount?: number;
+          paid_at?: Timestamp;
           notes?: string | null;
           created_at?: Timestamp | null;
         };
@@ -453,6 +495,8 @@ export type Expense = Database["public"]["Tables"]["expenses"]["Row"];
 export type ExpenseInsert = Database["public"]["Tables"]["expenses"]["Insert"];
 export type Payment = Database["public"]["Tables"]["payments"]["Row"];
 export type PaymentInsert = Database["public"]["Tables"]["payments"]["Insert"];
+export type WorkerPayment = Database["public"]["Tables"]["worker_payments"]["Row"];
+export type WorkerPaymentInsert = Database["public"]["Tables"]["worker_payments"]["Insert"];
 export type Task = Database["public"]["Tables"]["tasks"]["Row"];
 export type TaskInsert = Database["public"]["Tables"]["tasks"]["Insert"];
 

@@ -78,7 +78,7 @@ export default async function PortalPage({
       <header className="border-b bg-background">
         <div className="container flex h-14 items-center gap-2 font-bold">
           <HardHat className="h-5 w-5 text-primary" />
-          עתר · מעקב פרויקט
+          אתר · מעקב פרויקט
         </div>
       </header>
 
@@ -208,7 +208,7 @@ export default async function PortalPage({
         ) : null}
 
         <footer className="text-center text-xs text-muted-foreground pt-4 pb-10">
-          מופק ע״י עתר · כלי הניהול לקבלנים
+          מופק ע״י אתר · כלי הניהול לקבלנים
         </footer>
       </main>
     </div>
