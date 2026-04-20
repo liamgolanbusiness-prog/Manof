@@ -3,7 +3,7 @@ import { requireUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { logoutAction } from "@/app/(auth)/login/actions";
 import { Button } from "@/components/ui/button";
-import { HardHat, LogOut, Plus, User } from "lucide-react";
+import { HardHat, LogOut, Plus, Search, Settings as SettingsIcon, User } from "lucide-react";
 
 export default async function AppLayout({
   children,
@@ -29,6 +29,11 @@ export default async function AppLayout({
             <span className="hidden sm:inline">אתר</span>
           </Link>
           <nav className="flex items-center gap-1">
+            <Link href="/app/search" aria-label="חיפוש">
+              <Button size="sm" variant="ghost" className="gap-1">
+                <Search className="h-4 w-4" />
+              </Button>
+            </Link>
             <Link href="/app/projects/new">
               <Button size="sm" variant="ghost" className="gap-1">
                 <Plus className="h-4 w-4" />
@@ -39,6 +44,11 @@ export default async function AppLayout({
               <Button size="sm" variant="ghost" className="gap-1">
                 <User className="h-4 w-4" />
                 <span className="hidden sm:inline">אנשי קשר</span>
+              </Button>
+            </Link>
+            <Link href="/app/settings" aria-label="הגדרות">
+              <Button size="sm" variant="ghost" className="gap-1">
+                <SettingsIcon className="h-4 w-4" />
               </Button>
             </Link>
             <form action={logoutAction}>

@@ -22,6 +22,24 @@ export interface Database {
           full_name: string | null;
           business_name: string | null;
           logo_url: string | null;
+          tax_id: string | null;
+          tax_id_type: string | null;
+          vat_rate: number | null;
+          vat_included: boolean | null;
+          address: string | null;
+          city: string | null;
+          email: string | null;
+          website: string | null;
+          invoice_prefix: string | null;
+          next_invoice_number: number | null;
+          next_quote_number: number | null;
+          next_receipt_number: number | null;
+          bank_name: string | null;
+          bank_branch: string | null;
+          bank_account: string | null;
+          bit_phone: string | null;
+          invoice_footer: string | null;
+          onboarding_completed_at: Timestamp | null;
           created_at: Timestamp | null;
         };
         Insert: {
@@ -30,6 +48,24 @@ export interface Database {
           full_name?: string | null;
           business_name?: string | null;
           logo_url?: string | null;
+          tax_id?: string | null;
+          tax_id_type?: string | null;
+          vat_rate?: number | null;
+          vat_included?: boolean | null;
+          address?: string | null;
+          city?: string | null;
+          email?: string | null;
+          website?: string | null;
+          invoice_prefix?: string | null;
+          next_invoice_number?: number | null;
+          next_quote_number?: number | null;
+          next_receipt_number?: number | null;
+          bank_name?: string | null;
+          bank_branch?: string | null;
+          bank_account?: string | null;
+          bit_phone?: string | null;
+          invoice_footer?: string | null;
+          onboarding_completed_at?: Timestamp | null;
           created_at?: Timestamp | null;
         };
         Update: {
@@ -38,6 +74,24 @@ export interface Database {
           full_name?: string | null;
           business_name?: string | null;
           logo_url?: string | null;
+          tax_id?: string | null;
+          tax_id_type?: string | null;
+          vat_rate?: number | null;
+          vat_included?: boolean | null;
+          address?: string | null;
+          city?: string | null;
+          email?: string | null;
+          website?: string | null;
+          invoice_prefix?: string | null;
+          next_invoice_number?: number | null;
+          next_quote_number?: number | null;
+          next_receipt_number?: number | null;
+          bank_name?: string | null;
+          bank_branch?: string | null;
+          bank_account?: string | null;
+          bit_phone?: string | null;
+          invoice_footer?: string | null;
+          onboarding_completed_at?: Timestamp | null;
           created_at?: Timestamp | null;
         };
         Relationships: [];
@@ -518,3 +572,13 @@ export type IssueStatus = (typeof ISSUE_STATUSES)[number];
 
 export const TASK_STATUSES = ["open", "done"] as const;
 export type TaskStatus = (typeof TASK_STATUSES)[number];
+
+export const TAX_ID_TYPES = ["osek_patur", "osek_morshe", "company", "individual"] as const;
+export type TaxIdType = (typeof TAX_ID_TYPES)[number];
+
+export const TAX_ID_TYPE_LABELS: Record<TaxIdType, string> = {
+  osek_patur: "עוסק פטור",
+  osek_morshe: "עוסק מורשה",
+  company: "חברה בע״מ",
+  individual: "יחיד / ת.ז.",
+};
