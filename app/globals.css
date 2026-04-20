@@ -72,3 +72,27 @@
     padding-bottom: max(1rem, env(safe-area-inset-bottom));
   }
 }
+
+/* Phone-frame: centers the app in a ~420px column on desktop so it looks
+ * like a phone while staying edge-to-edge on real phones. No overflow
+ * clipping so sticky headers inside still attach to the viewport. */
+.phone-frame {
+  min-height: 100dvh;
+}
+@media (min-width: 768px) {
+  body {
+    background: linear-gradient(180deg, hsl(var(--muted)) 0%, hsl(var(--background)) 100%);
+  }
+  .phone-frame {
+    max-width: 420px;
+    margin: 0 auto;
+    background: hsl(var(--background));
+    box-shadow:
+      0 0 0 1px hsl(var(--border)),
+      0 24px 60px -20px rgba(0, 0, 0, 0.25);
+    border-radius: 28px;
+    margin-top: 1.5rem;
+    margin-bottom: 1.5rem;
+    min-height: calc(100dvh - 3rem);
+  }
+}

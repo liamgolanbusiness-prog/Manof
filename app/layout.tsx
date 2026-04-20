@@ -35,7 +35,7 @@ export default function RootLayout({
   return (
     <html lang="he" dir="rtl" suppressHydrationWarning>
       <body className="min-h-screen bg-background">
-        {children}
+        <div className="phone-frame">{children}</div>
         <Toaster />
       </body>
     </html>
