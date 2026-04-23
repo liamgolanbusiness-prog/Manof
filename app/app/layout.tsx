@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { logoutAction } from "@/app/(auth)/login/actions";
 import { Button } from "@/components/ui/button";
 import { HardHat, LogOut, Plus, Search, Settings as SettingsIcon, User } from "lucide-react";
+import { OfflineBanner } from "@/components/offline-banner";
 
 export default async function AppLayout({
   children,
@@ -65,6 +66,7 @@ export default async function AppLayout({
           </nav>
         </div>
       </header>
+      <OfflineBanner />
       {/* Slim user strip */}
       <div className="container py-1 text-xs text-muted-foreground truncate">
         שלום, {displayName}
