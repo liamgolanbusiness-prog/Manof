@@ -32,6 +32,15 @@ export async function createProjectAction(
   const name = String(formData.get("name") ?? "").trim();
   if (!name) return { error: "שם הפרויקט חובה" };
 
+  // Plan gate — free tier limited to 1 active project.
+  const { checkProjectLimit } = await import("@/lib/plan-gate");
+  const gate = await checkProjectLimit(user.id);
+  if (!gate.allowed) {
+    return {
+      error: `הגעת לתקרה (${gate.limit} פרויקטים פעילים). שדרג למקצועי לפרויקטים ללא הגבלה: /app/billing`,
+    };
+  }
+
   const phoneInput = String(formData.get("client_phone") ?? "").trim();
   let client_phone: string | null = null;
   if (phoneInput) {

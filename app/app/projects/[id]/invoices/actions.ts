@@ -49,6 +49,15 @@ export async function createInvoiceAction(input: {
 }) {
   const { user, supabase } = await assertProjectAccess(input.project_id);
 
+  // Plan gate — free tier limited to 3 invoices per month.
+  const { checkInvoiceLimit } = await import("@/lib/plan-gate");
+  const gate = await checkInvoiceLimit(user.id);
+  if (!gate.allowed) {
+    throw new Error(
+      `הגעת לתקרת חשבוניות (${gate.limit} בחודש). שדרג למקצועי לחשבוניות ללא הגבלה.`
+    );
+  }
+
   const cleanItems = (input.items || [])
     .map((it) => ({
       description: (it.description || "").trim(),
