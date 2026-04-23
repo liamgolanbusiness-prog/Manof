@@ -79,7 +79,18 @@ export default async function PortalPage({
   const h = headers();
   const ip = clientIpFromHeaders(h);
   const ua = h.get("user-agent")?.slice(0, 200) ?? null;
+  let firstViewToday = false;
   try {
+    // Detect if this is the first view of the day — drives the owner push.
+    const startOfDay = new Date();
+    startOfDay.setHours(0, 0, 0, 0);
+    const { count } = await supabase
+      .from("portal_views")
+      .select("id", { count: "exact", head: true })
+      .eq("project_id", project.id)
+      .gte("viewed_at", startOfDay.toISOString());
+    firstViewToday = (count ?? 0) === 0;
+
     await supabase.from("portal_views").insert({
       project_id: project.id,
       ip_hash: hashIpForPortal(ip, params.token),
@@ -93,6 +104,17 @@ export default async function PortalPage({
         portal_view_count: incremented,
       })
       .eq("id", project.id);
+
+    if (firstViewToday) {
+      // fire-and-forget — don't block render
+      const { notifyUser } = await import("@/lib/push-send");
+      notifyUser(project.user_id, {
+        title: "הלקוח צפה בפורטל",
+        body: `${project.client_name ?? "הלקוח"} נכנס לצפייה בפרויקט "${project.name}"`,
+        tag: `portal-view-${project.id}`,
+        url: `/app/projects/${project.id}/client`,
+      }).catch(() => {});
+    }
   } catch {
     // Don't block page render on telemetry failures.
   }
