@@ -1,3 +1,13 @@
+-- Ensure the shared touch_updated_at() helper exists (baseline 0001 defines
+-- it; this re-creates it idempotently so this migration is standalone-safe).
+create or replace function public.touch_updated_at()
+returns trigger language plpgsql as $$
+begin
+  new.updated_at = now();
+  return new;
+end;
+$$;
+
 -- Israeli-compliant invoicing.
 --
 -- One table covers all four document types a contractor issues:

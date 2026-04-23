@@ -1,3 +1,12 @@
+-- Ensure touch_updated_at() exists (idempotent; defined originally in 0001).
+create or replace function public.touch_updated_at()
+returns trigger language plpgsql as $$
+begin
+  new.updated_at = now();
+  return new;
+end;
+$$;
+
 -- Change orders (שינויים בחוזה). The #1 source of contractor-client conflict:
 -- mid-project scope changes that the client later disputes. This table
 -- models each change as a signed document — the contractor proposes, the

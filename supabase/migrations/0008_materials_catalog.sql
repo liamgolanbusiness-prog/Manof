@@ -1,3 +1,12 @@
+-- Ensure touch_updated_at() exists (idempotent; defined originally in 0001).
+create or replace function public.touch_updated_at()
+returns trigger language plpgsql as $$
+begin
+  new.updated_at = now();
+  return new;
+end;
+$$;
+
 -- Reusable materials catalog per user. Contractors buy the same items
 -- repeatedly (cement, tiles, brand-name paint). Saves typing + price
 -- memory + lets us surface "typical" costs when a new project starts.

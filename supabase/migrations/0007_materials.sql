@@ -1,3 +1,12 @@
+-- Ensure touch_updated_at() exists (idempotent; defined originally in 0001).
+create or replace function public.touch_updated_at()
+returns trigger language plpgsql as $$
+begin
+  new.updated_at = now();
+  return new;
+end;
+$$;
+
 -- Materials tracking per project. Sits alongside expenses: an expense is a
 -- receipt you paid; a material is a line item physically on the site
 -- (ordered / delivered / installed / returned). A contractor commonly has
