@@ -15,7 +15,12 @@ import {
   Banknote,
   Lock,
   Timer,
+  FileText,
+  CheckCircle2,
+  Download,
 } from "lucide-react";
+import { INVOICE_TYPE_LABELS, type InvoiceType } from "@/lib/supabase/database.types";
+import { acceptQuoteAction } from "./accept-quote/actions";
 
 export const dynamic = "force-dynamic";
 
@@ -26,7 +31,7 @@ export default async function PortalPage({
   searchParams,
 }: {
   params: { token: string };
-  searchParams: { pin_error?: string };
+  searchParams: { pin_error?: string; accepted?: string };
 }) {
   if (!params.token || params.token.length < 8) notFound();
 
@@ -91,8 +96,8 @@ export default async function PortalPage({
     // Don't block page render on telemetry failures.
   }
 
-  // Get last 20 photos (across reports) + payments summary + recent report notes
-  const [photosRes, payInRes, reportsRes, profileRes] = await Promise.all([
+  // Get last 20 photos (across reports) + payments summary + recent report notes + issued docs
+  const [photosRes, payInRes, reportsRes, profileRes, invoicesRes] = await Promise.all([
     supabase
       .from("daily_reports")
       .select("id, report_date")
@@ -126,12 +131,23 @@ export default async function PortalPage({
       .select("business_name, full_name, logo_url, phone, email")
       .eq("id", project.user_id)
       .maybeSingle(),
+    supabase
+      .from("invoices")
+      .select("id, type, doc_number, status, issue_date, total, accepted_at, accepted_by_name, valid_until, due_date")
+      .eq("project_id", project.id)
+      .in("status", ["issued", "accepted", "paid"])
+      .order("issue_date", { ascending: false }),
   ]);
 
   const photos = photosRes.data ?? [];
   const totalIn = (payInRes.data ?? []).reduce((s, p) => s + Number(p.amount), 0);
   const contract = Number(project.contract_value ?? 0);
   const profile = profileRes?.data;
+  const docs = invoicesRes.data ?? [];
+  const pendingQuotes = docs.filter((d) => d.type === "quote" && d.status === "issued");
+  const otherDocs = docs.filter((d) => !(d.type === "quote" && d.status === "issued"));
+  const acceptedParam =
+    typeof searchParams?.accepted === "string" ? searchParams.accepted : undefined;
 
   return (
     <div lang="he" dir="rtl" className="min-h-screen bg-muted/30">
@@ -257,6 +273,113 @@ export default async function PortalPage({
                 />
               </div>
             ) : null}
+          </section>
+        ) : null}
+
+        {acceptedParam ? (
+          <section className="rounded-2xl border border-success/30 bg-success/10 p-4 flex items-center gap-2 text-sm">
+            <CheckCircle2 className="h-5 w-5 text-success shrink-0" />
+            <span>הצעת המחיר התקבלה. תודה!</span>
+          </section>
+        ) : null}
+
+        {pendingQuotes.length > 0 ? (
+          <section className="space-y-2">
+            <h2 className="text-lg font-semibold flex items-center gap-2">
+              <FileText className="h-5 w-5 text-primary" />
+              הצעות מחיר לאישור
+            </h2>
+            <ul className="space-y-3">
+              {pendingQuotes.map((q) => (
+                <li key={q.id} className="rounded-2xl border bg-card p-4 space-y-3">
+                  <div className="flex items-center justify-between gap-2">
+                    <div>
+                      <div className="font-semibold">הצעת מחיר</div>
+                      <div className="text-xs text-muted-foreground font-mono" dir="ltr">
+                        {q.doc_number}
+                      </div>
+                      {q.valid_until ? (
+                        <div className="text-xs text-muted-foreground">
+                          בתוקף עד {new Date(q.valid_until).toLocaleDateString("he-IL")}
+                        </div>
+                      ) : null}
+                    </div>
+                    <div className="text-end">
+                      <div className="text-2xl font-bold" dir="ltr">
+                        {new Intl.NumberFormat("he-IL", {
+                          style: "currency",
+                          currency: "ILS",
+                          maximumFractionDigits: 0,
+                        }).format(Number(q.total))}
+                      </div>
+                    </div>
+                  </div>
+                  <details className="text-sm">
+                    <summary className="cursor-pointer text-primary">
+                      לחץ לאישור ההצעה
+                    </summary>
+                    <form
+                      action={acceptQuoteAction}
+                      className="mt-3 space-y-2 rounded-xl bg-muted/50 p-3"
+                    >
+                      <input type="hidden" name="token" value={params.token} />
+                      <input type="hidden" name="quote_id" value={q.id} />
+                      <label className="text-xs text-muted-foreground">
+                        הקלד את שמך לאישור:
+                      </label>
+                      <input
+                        name="typed_name"
+                        required
+                        className="w-full rounded-xl border bg-background px-3 py-2 text-sm"
+                        placeholder="שם מלא"
+                      />
+                      <button
+                        type="submit"
+                        className="w-full rounded-xl bg-primary text-primary-foreground font-semibold h-11"
+                      >
+                        אני מאשר את ההצעה
+                      </button>
+                    </form>
+                  </details>
+                </li>
+              ))}
+            </ul>
+          </section>
+        ) : null}
+
+        {otherDocs.length > 0 ? (
+          <section className="space-y-2">
+            <h2 className="text-lg font-semibold flex items-center gap-2">
+              <FileText className="h-5 w-5 text-primary" />
+              מסמכים
+            </h2>
+            <ul className="space-y-2">
+              {otherDocs.map((d) => (
+                <li
+                  key={d.id}
+                  className="rounded-xl border bg-card p-3 flex items-center gap-3"
+                >
+                  <FileText className="h-5 w-5 text-muted-foreground shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-medium">
+                      {INVOICE_TYPE_LABELS[d.type as InvoiceType]}
+                      {d.status === "accepted" ? " · התקבל" : ""}
+                      {d.status === "paid" ? " · שולם" : ""}
+                    </div>
+                    <div className="text-xs text-muted-foreground font-mono" dir="ltr">
+                      {d.doc_number}
+                    </div>
+                  </div>
+                  <div className="text-end text-sm font-bold" dir="ltr">
+                    {new Intl.NumberFormat("he-IL", {
+                      style: "currency",
+                      currency: "ILS",
+                      maximumFractionDigits: 0,
+                    }).format(Number(d.total))}
+                  </div>
+                </li>
+              ))}
+            </ul>
           </section>
         ) : null}
 
