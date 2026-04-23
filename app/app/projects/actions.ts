@@ -64,6 +64,80 @@ export async function createProjectAction(
   redirect(`/app/projects/${data.id}/today`);
 }
 
+// Clone a template project: copy the row as a draft, copy project_members,
+// and copy non-completed tasks. Daily reports + expenses + photos + invoices
+// are intentionally NOT copied — those are per-project history.
+export async function cloneProjectAction(
+  sourceId: string,
+  newName: string
+): Promise<{ id: string } | { error: string }> {
+  const user = await requireUser();
+  const supabase = createClient();
+  if (!newName.trim()) return { error: "שם חובה" };
+
+  const { data: source } = await supabase
+    .from("projects")
+    .select("*")
+    .eq("id", sourceId)
+    .eq("user_id", user.id)
+    .maybeSingle();
+  if (!source) return { error: "תבנית לא נמצאה" };
+
+  const { data: created, error: insErr } = await supabase
+    .from("projects")
+    .insert({
+      user_id: user.id,
+      name: newName.trim(),
+      address: source.address,
+      client_name: null, // fresh client on new project
+      client_phone: null,
+      contract_value: source.contract_value,
+      start_date: null,
+      target_end_date: null,
+      status: "active",
+      progress_pct: 0,
+      cover_photo_url: source.cover_photo_url,
+    })
+    .select("id")
+    .single();
+  if (insErr || !created) return { error: insErr?.message ?? "שגיאה" };
+
+  const { data: members } = await supabase
+    .from("project_members")
+    .select("contact_id, role_in_project, agreed_amount")
+    .eq("project_id", sourceId);
+  if (members && members.length > 0) {
+    await supabase.from("project_members").insert(
+      members.map((m) => ({
+        project_id: created.id,
+        contact_id: m.contact_id,
+        role_in_project: m.role_in_project,
+        agreed_amount: m.agreed_amount,
+      }))
+    );
+  }
+
+  const { data: tasks } = await supabase
+    .from("tasks")
+    .select("title, description, assignee_contact_id")
+    .eq("project_id", sourceId)
+    .neq("status", "done");
+  if (tasks && tasks.length > 0) {
+    await supabase.from("tasks").insert(
+      tasks.map((t) => ({
+        user_id: user.id,
+        project_id: created.id,
+        title: t.title,
+        description: t.description,
+        assignee_contact_id: t.assignee_contact_id,
+      }))
+    );
+  }
+
+  revalidatePath("/app/projects");
+  return { id: created.id };
+}
+
 export async function updateProjectStatus(projectId: string, status: string) {
   await requireUser();
   const supabase = createClient();
