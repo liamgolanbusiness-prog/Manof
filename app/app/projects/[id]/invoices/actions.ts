@@ -180,6 +180,25 @@ export async function setInvoiceStatus(
     .eq("id", invoiceId)
     .eq("user_id", user.id);
   if (error) throw new Error(error.message);
+
+  // Fire webhooks (non-blocking).
+  try {
+    const { fireWebhook } = await import("@/lib/webhooks");
+    const event =
+      status === "issued"
+        ? "invoice.issued"
+        : status === "paid"
+          ? "invoice.paid"
+          : status === "cancelled"
+            ? "invoice.cancelled"
+            : null;
+    if (event) {
+      fireWebhook(user.id, event, { invoice_id: invoiceId, project_id: projectId }).catch(() => {});
+    }
+  } catch {
+    /* swallow */
+  }
+
   revalidatePath(`/app/projects/${projectId}/invoices`);
 }
 

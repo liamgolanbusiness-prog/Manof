@@ -60,5 +60,26 @@ export async function acceptQuoteAction(formData: FormData) {
     })
     .eq("id", quoteId);
 
+  // Webhooks: quote.accepted → owner's subscribers. Need the owner's user_id.
+  try {
+    const { data: inv } = await supabase
+      .from("invoices")
+      .select("user_id, doc_number, total, project_id")
+      .eq("id", quoteId)
+      .maybeSingle();
+    if (inv?.user_id) {
+      const { fireWebhook } = await import("@/lib/webhooks");
+      fireWebhook(inv.user_id, "quote.accepted", {
+        invoice_id: quoteId,
+        doc_number: inv.doc_number,
+        total: inv.total,
+        project_id: inv.project_id,
+        accepted_by: typedName,
+      }).catch(() => {});
+    }
+  } catch {
+    /* swallow */
+  }
+
   redirect(`/portal/${token}?accepted=${quoteId}`);
 }

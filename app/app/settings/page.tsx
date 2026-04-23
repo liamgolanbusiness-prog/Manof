@@ -73,6 +73,18 @@ export default async function SettingsPage() {
 
       <Card>
         <CardHeader>
+          <CardTitle className="text-base">מפתחים</CardTitle>
+          <CardDescription>Webhooks ו-API לחיבור Zapier / Make / n8n.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Link href="/app/settings/developer">
+            <Button variant="outline" size="sm">הגדרות מפתחים</Button>
+          </Link>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
           <CardTitle className="text-base flex items-center gap-2">
             <ShieldCheck className="h-4 w-4 text-primary" />
             אבטחה

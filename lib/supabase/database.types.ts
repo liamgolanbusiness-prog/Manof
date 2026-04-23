@@ -180,6 +180,34 @@ export interface Database {
         };
         Relationships: [];
       };
+      webhooks: {
+        Row: {
+          id: string;
+          user_id: string;
+          url: string;
+          events: string[];
+          secret: string | null;
+          active: boolean;
+          last_status: number | null;
+          last_fired_at: Timestamp | null;
+          last_error: string | null;
+          created_at: Timestamp | null;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          url: string;
+          events?: string[];
+          secret?: string | null;
+          active?: boolean;
+          last_status?: number | null;
+          last_fired_at?: Timestamp | null;
+          last_error?: string | null;
+          created_at?: Timestamp | null;
+        };
+        Update: Partial<Database["public"]["Tables"]["webhooks"]["Insert"]> & { id?: string };
+        Relationships: [];
+      };
       recurring_invoice_templates: {
         Row: {
           id: string;
