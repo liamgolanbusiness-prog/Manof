@@ -64,7 +64,10 @@ export function computeTotals(
 }
 
 export function lineTotal(qty: number, price: number): number {
-  return round2((Number(qty) || 0) * (Number(price) || 0));
+  const q = Number(qty);
+  const p = Number(price);
+  if (!Number.isFinite(q) || !Number.isFinite(p)) return 0;
+  return round2(q * p);
 }
 
 function round2(n: number): number {
