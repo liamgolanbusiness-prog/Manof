@@ -110,6 +110,11 @@ export interface Database {
           status: string | null;
           cover_photo_url: string | null;
           portal_token: string | null;
+          portal_expires_at: Timestamp | null;
+          portal_pin_hash: string | null;
+          portal_revoked_at: Timestamp | null;
+          portal_last_viewed_at: Timestamp | null;
+          portal_view_count: number | null;
           progress_pct: number | null;
           created_at: Timestamp | null;
           updated_at: Timestamp | null;
@@ -127,6 +132,11 @@ export interface Database {
           status?: string | null;
           cover_photo_url?: string | null;
           portal_token?: string | null;
+          portal_expires_at?: Timestamp | null;
+          portal_pin_hash?: string | null;
+          portal_revoked_at?: Timestamp | null;
+          portal_last_viewed_at?: Timestamp | null;
+          portal_view_count?: number | null;
           progress_pct?: number | null;
           created_at?: Timestamp | null;
           updated_at?: Timestamp | null;
@@ -144,9 +154,38 @@ export interface Database {
           status?: string | null;
           cover_photo_url?: string | null;
           portal_token?: string | null;
+          portal_expires_at?: Timestamp | null;
+          portal_pin_hash?: string | null;
+          portal_revoked_at?: Timestamp | null;
+          portal_last_viewed_at?: Timestamp | null;
+          portal_view_count?: number | null;
           progress_pct?: number | null;
           created_at?: Timestamp | null;
           updated_at?: Timestamp | null;
+        };
+        Relationships: [];
+      };
+      portal_views: {
+        Row: {
+          id: string;
+          project_id: string;
+          viewed_at: Timestamp | null;
+          ip_hash: string | null;
+          user_agent: string | null;
+        };
+        Insert: {
+          id?: string;
+          project_id: string;
+          viewed_at?: Timestamp | null;
+          ip_hash?: string | null;
+          user_agent?: string | null;
+        };
+        Update: {
+          id?: string;
+          project_id?: string;
+          viewed_at?: Timestamp | null;
+          ip_hash?: string | null;
+          user_agent?: string | null;
         };
         Relationships: [];
       };
