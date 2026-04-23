@@ -2,6 +2,15 @@
 -- Cron picks up due templates and calls a server action to issue the next
 -- real invoice copy.
 
+-- Ensure touch_updated_at() exists (idempotent; defined originally in 0001).
+create or replace function public.touch_updated_at()
+returns trigger language plpgsql as $$
+begin
+  new.updated_at = now();
+  return new;
+end;
+$$;
+
 create table if not exists public.recurring_invoice_templates (
   id                 uuid primary key default gen_random_uuid(),
   user_id            uuid not null references auth.users(id) on delete cascade,
