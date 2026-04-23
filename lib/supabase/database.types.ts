@@ -522,6 +522,44 @@ export interface Database {
         };
         Relationships: [];
       };
+      materials: {
+        Row: {
+          id: string;
+          project_id: string;
+          user_id: string;
+          name: string;
+          quantity: number;
+          unit: string | null;
+          cost_per_unit: number | null;
+          total_cost: number | null;
+          supplier_contact_id: string | null;
+          status: string;
+          delivery_date: ISODate | null;
+          expense_id: string | null;
+          notes: string | null;
+          created_at: Timestamp | null;
+          updated_at: Timestamp | null;
+        };
+        Insert: {
+          id?: string;
+          project_id: string;
+          user_id: string;
+          name: string;
+          quantity?: number;
+          unit?: string | null;
+          cost_per_unit?: number | null;
+          total_cost?: number | null;
+          supplier_contact_id?: string | null;
+          status?: string;
+          delivery_date?: ISODate | null;
+          expense_id?: string | null;
+          notes?: string | null;
+          created_at?: Timestamp | null;
+          updated_at?: Timestamp | null;
+        };
+        Update: Partial<Database["public"]["Tables"]["materials"]["Insert"]> & { id?: string };
+        Relationships: [];
+      };
       change_orders: {
         Row: {
           id: string;
@@ -745,6 +783,17 @@ export type IssueStatus = (typeof ISSUE_STATUSES)[number];
 
 export const TASK_STATUSES = ["open", "done"] as const;
 export type TaskStatus = (typeof TASK_STATUSES)[number];
+
+export type Material = Database["public"]["Tables"]["materials"]["Row"];
+export type MaterialInsert = Database["public"]["Tables"]["materials"]["Insert"];
+export const MATERIAL_STATUSES = ["ordered", "delivered", "installed", "returned"] as const;
+export type MaterialStatus = (typeof MATERIAL_STATUSES)[number];
+export const MATERIAL_STATUS_LABELS: Record<MaterialStatus, string> = {
+  ordered: "הוזמן",
+  delivered: "סופק",
+  installed: "הותקן",
+  returned: "הוחזר",
+};
 
 export type ChangeOrder = Database["public"]["Tables"]["change_orders"]["Row"];
 export type ChangeOrderInsert = Database["public"]["Tables"]["change_orders"]["Insert"];
