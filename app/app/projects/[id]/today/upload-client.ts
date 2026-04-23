@@ -1,6 +1,7 @@
 "use client";
 
 import { createClient } from "@/lib/supabase/client";
+import { compressImage } from "@/lib/image-compress";
 
 /**
  * Uploads a file to the `project-media` Supabase Storage bucket and returns a
@@ -16,14 +17,15 @@ export async function uploadReportPhoto(
   file: File
 ): Promise<string> {
   const supabase = createClient();
-  const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
+  const compressed = await compressImage(file, "photo");
+  const ext = compressed.name.split(".").pop()?.toLowerCase() || "jpg";
   const rand = Math.random().toString(36).slice(2, 10);
   const path = `projects/${projectId}/reports/${reportId}/${Date.now()}-${rand}.${ext}`;
 
-  const { error } = await supabase.storage.from("project-media").upload(path, file, {
+  const { error } = await supabase.storage.from("project-media").upload(path, compressed, {
     cacheControl: "3600",
     upsert: false,
-    contentType: file.type || "image/jpeg",
+    contentType: compressed.type || "image/jpeg",
   });
   if (error) throw new Error(error.message);
 
@@ -55,14 +57,15 @@ export async function uploadReceipt(
   file: File
 ): Promise<string> {
   const supabase = createClient();
-  const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
+  const compressed = await compressImage(file, "receipt");
+  const ext = compressed.name.split(".").pop()?.toLowerCase() || "jpg";
   const rand = Math.random().toString(36).slice(2, 10);
   const path = `projects/${projectId}/receipts/${Date.now()}-${rand}.${ext}`;
 
-  const { error } = await supabase.storage.from("project-media").upload(path, file, {
+  const { error } = await supabase.storage.from("project-media").upload(path, compressed, {
     cacheControl: "3600",
     upsert: false,
-    contentType: file.type || "image/jpeg",
+    contentType: compressed.type || "image/jpeg",
   });
   if (error) throw new Error(error.message);
 

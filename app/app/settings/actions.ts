@@ -89,7 +89,7 @@ export async function updateBusinessProfile(
 
   if (error) return { error: error.message };
   revalidatePath("/app/settings");
-  revalidatePath("/app", "layout");
+  revalidatePath("/app/settings");
   return { ok: true };
 }
 
@@ -119,7 +119,7 @@ export async function uploadLogoAction(formData: FormData): Promise<{ url?: stri
     .eq("id", user.id);
   if (updErr) return { error: updErr.message };
   revalidatePath("/app/settings");
-  revalidatePath("/app", "layout");
+  revalidatePath("/app/settings");
   return { url: pub.publicUrl };
 }
 
@@ -128,7 +128,7 @@ export async function removeLogoAction(): Promise<{ ok: boolean }> {
   const supabase = createClient();
   await supabase.from("profiles").update({ logo_url: null }).eq("id", user.id);
   revalidatePath("/app/settings");
-  revalidatePath("/app", "layout");
+  revalidatePath("/app/settings");
   return { ok: true };
 }
 
@@ -139,5 +139,5 @@ export async function markOnboardingComplete() {
     .from("profiles")
     .update({ onboarding_completed_at: new Date().toISOString() })
     .eq("id", user.id);
-  revalidatePath("/app", "layout");
+  revalidatePath("/app/settings");
 }
