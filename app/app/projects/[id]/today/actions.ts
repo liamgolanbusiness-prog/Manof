@@ -113,6 +113,58 @@ export async function setReportLocked(
   revalidatePath(`/app/projects/${projectId}/diary`);
 }
 
+// Send the day's summary to the client via WhatsApp Business API.
+// Returns { sent: true } on success, { sent: false, fallback_url } when not
+// configured so the client can fall back to wa.me deep link in the browser.
+export async function sendDailySummaryToClient(
+  projectId: string,
+  reportId: string
+): Promise<{ sent: boolean; fallback_url?: string; error?: string }> {
+  const { supabase } = await assertProjectAccess(projectId);
+
+  const [{ data: project }, { data: report }] = await Promise.all([
+    supabase
+      .from("projects")
+      .select("name, client_name, client_phone, portal_token")
+      .eq("id", projectId)
+      .maybeSingle(),
+    supabase
+      .from("daily_reports")
+      .select("report_date, weather, notes")
+      .eq("id", reportId)
+      .maybeSingle(),
+  ]);
+  if (!project || !report) return { sent: false, error: "not-found" };
+
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "";
+  const portalUrl = project.portal_token ? `${appUrl}/portal/${project.portal_token}` : "";
+
+  const lines: string[] = [
+    `שלום${project.client_name ? ` ${project.client_name}` : ""},`,
+    `סיכום יום עבודה בפרויקט "${project.name}" (${report.report_date})`,
+    "",
+    report.weather ? `מזג אוויר: ${report.weather}` : "",
+    report.notes ? `סיכום:\n${report.notes}` : "",
+    "",
+    portalUrl ? `למעקב חי: ${portalUrl}` : "",
+  ].filter(Boolean);
+  const body = lines.join("\n");
+
+  const { sendWhatsAppText, isWhatsAppConfigured } = await import(
+    "@/lib/channels/whatsapp"
+  );
+  if (!isWhatsAppConfigured() || !project.client_phone) {
+    const text = encodeURIComponent(body);
+    const to = (project.client_phone || "").replace(/[^\d+]/g, "").replace(/^\+/, "");
+    const fallback = to
+      ? `https://wa.me/${to}?text=${text}`
+      : `https://wa.me/?text=${text}`;
+    return { sent: false, fallback_url: fallback };
+  }
+  const res = await sendWhatsAppText(project.client_phone, body);
+  return { sent: res.ok, error: res.error };
+}
+
 /** Attendance: save rows as (contact_id, hours_worked). Replaces existing. */
 export async function saveAttendance(
   projectId: string,

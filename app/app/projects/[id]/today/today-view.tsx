@@ -48,6 +48,7 @@ import {
   removeReportPhoto,
   createIssue,
   resolveIssue,
+  sendDailySummaryToClient,
 } from "./actions";
 import { useToast } from "@/components/ui/use-toast";
 import { uploadReportPhoto } from "./upload-client";
@@ -620,6 +621,20 @@ function CloseDayCard({
               try {
                 await setReportLocked(projectId, reportId, !locked);
                 router.refresh();
+                if (!locked) {
+                  // Just closed the day — offer to send summary to client.
+                  const willSend = window.confirm("לשלוח סיכום יום ללקוח ב-WhatsApp?");
+                  if (willSend) {
+                    const res = await sendDailySummaryToClient(projectId, reportId);
+                    if (res.sent) {
+                      toast({ title: "סיכום נשלח ללקוח", variant: "success" });
+                    } else if (res.fallback_url) {
+                      window.open(res.fallback_url, "_blank", "noopener,noreferrer");
+                    } else if (res.error) {
+                      toast({ title: res.error, variant: "destructive" });
+                    }
+                  }
+                }
                 toast({
                   title: locked ? "נפתח לעריכה" : "היום נסגר",
                   variant: "success",
