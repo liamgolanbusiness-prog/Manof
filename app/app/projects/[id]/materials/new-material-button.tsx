@@ -27,13 +27,23 @@ import { MATERIAL_STATUSES, MATERIAL_STATUS_LABELS } from "@/lib/supabase/databa
 import { createMaterial } from "./actions";
 
 type Supplier = { id: string; name: string };
+type CatalogItem = {
+  id: string;
+  name: string;
+  default_unit: string | null;
+  typical_cost_per_unit: number | null;
+  default_supplier_id: string | null;
+  use_count: number;
+};
 
 export function NewMaterialButton({
   projectId,
   suppliers,
+  catalog,
 }: {
   projectId: string;
   suppliers: Supplier[];
+  catalog: CatalogItem[];
 }) {
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
@@ -98,6 +108,36 @@ export function NewMaterialButton({
           <DialogTitle>חומר חדש</DialogTitle>
         </DialogHeader>
         <div className="space-y-3">
+          {catalog.length > 0 ? (
+            <div className="space-y-1.5">
+              <Label>מקטלוג</Label>
+              <Select
+                onValueChange={(v) => {
+                  if (v === "__none__") return;
+                  const item = catalog.find((c) => c.id === v);
+                  if (!item) return;
+                  setName(item.name);
+                  if (item.default_unit) setUnit(item.default_unit);
+                  if (item.typical_cost_per_unit != null)
+                    setCost(String(item.typical_cost_per_unit));
+                  if (item.default_supplier_id) setSupplierId(item.default_supplier_id);
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="-- בחר פריט נפוץ או הקלד חדש למטה --" />
+                </SelectTrigger>
+                <SelectContent>
+                  {catalog.map((c) => (
+                    <SelectItem key={c.id} value={c.id}>
+                      {c.name}
+                      {c.default_unit ? ` · ${c.default_unit}` : ""}
+                      {c.typical_cost_per_unit != null ? ` · ₪${c.typical_cost_per_unit}` : ""}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          ) : null}
           <div className="space-y-1.5">
             <Label>שם החומר *</Label>
             <Input

@@ -19,7 +19,7 @@ export default async function MaterialsTab({
 }) {
   const user = await requireUser();
   const supabase = createClient();
-  const [{ data: project }, { data: materials }, { data: suppliers }] = await Promise.all([
+  const [{ data: project }, { data: materials }, { data: suppliers }, { data: catalog }] = await Promise.all([
     supabase
       .from("projects")
       .select("id, name")
@@ -38,6 +38,12 @@ export default async function MaterialsTab({
       .eq("user_id", user.id)
       .in("role", ["supplier", "subcontractor", "other"])
       .order("name"),
+    supabase
+      .from("materials_catalog")
+      .select("id, name, default_unit, typical_cost_per_unit, default_supplier_id, use_count")
+      .eq("user_id", user.id)
+      .order("use_count", { ascending: false })
+      .limit(50),
   ]);
 
   if (!project) notFound();
@@ -64,7 +70,11 @@ export default async function MaterialsTab({
             · סה״כ שווי {formatCurrency(totalValue)}
           </span>
         </h1>
-        <NewMaterialButton projectId={project.id} suppliers={suppliers ?? []} />
+        <NewMaterialButton
+          projectId={project.id}
+          suppliers={suppliers ?? []}
+          catalog={catalog ?? []}
+        />
       </div>
 
       <Tabs defaultValue="all">

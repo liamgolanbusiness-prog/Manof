@@ -47,7 +47,62 @@ export async function createMaterial(input: {
     notes: input.notes?.trim() || null,
   });
   if (error) throw new Error(error.message);
+
+  // Upsert into catalog — increment use_count, bump last_used_at, keep latest cost.
+  await upsertCatalog(supabase, user.id, {
+    name: input.name.trim(),
+    default_unit: input.unit?.trim() || null,
+    typical_cost_per_unit: cpu > 0 ? cpu : null,
+    default_supplier_id: input.supplier_contact_id || null,
+  });
+
   revalidatePath(`/app/projects/${input.project_id}/materials`);
+}
+
+async function upsertCatalog(
+  supabase: ReturnType<typeof createClient>,
+  userId: string,
+  row: {
+    name: string;
+    default_unit: string | null;
+    typical_cost_per_unit: number | null;
+    default_supplier_id: string | null;
+  }
+) {
+  // Look up case-insensitive by name.
+  const { data: existing } = await supabase
+    .from("materials_catalog")
+    .select("id, use_count")
+    .eq("user_id", userId)
+    .ilike("name", row.name)
+    .maybeSingle();
+  if (existing) {
+    await supabase
+      .from("materials_catalog")
+      .update({
+        use_count: (existing.use_count ?? 0) + 1,
+        last_used_at: new Date().toISOString(),
+        // Only overwrite cost/unit if provided — don't null-out previous value.
+        ...(row.typical_cost_per_unit != null
+          ? { typical_cost_per_unit: row.typical_cost_per_unit }
+          : {}),
+        ...(row.default_unit ? { default_unit: row.default_unit } : {}),
+        ...(row.default_supplier_id
+          ? { default_supplier_id: row.default_supplier_id }
+          : {}),
+      })
+      .eq("id", existing.id);
+  } else {
+    await supabase.from("materials_catalog").insert({
+      user_id: userId,
+      name: row.name,
+      default_unit: row.default_unit,
+      typical_cost_per_unit: row.typical_cost_per_unit,
+      default_supplier_id: row.default_supplier_id,
+      use_count: 1,
+      last_used_at: new Date().toISOString(),
+    });
+  }
 }
 
 export async function setMaterialStatus(

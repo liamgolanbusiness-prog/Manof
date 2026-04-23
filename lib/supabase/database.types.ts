@@ -522,6 +522,36 @@ export interface Database {
         };
         Relationships: [];
       };
+      materials_catalog: {
+        Row: {
+          id: string;
+          user_id: string;
+          name: string;
+          default_unit: string | null;
+          typical_cost_per_unit: number | null;
+          default_supplier_id: string | null;
+          use_count: number;
+          last_used_at: Timestamp | null;
+          notes: string | null;
+          created_at: Timestamp | null;
+          updated_at: Timestamp | null;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          name: string;
+          default_unit?: string | null;
+          typical_cost_per_unit?: number | null;
+          default_supplier_id?: string | null;
+          use_count?: number;
+          last_used_at?: Timestamp | null;
+          notes?: string | null;
+          created_at?: Timestamp | null;
+          updated_at?: Timestamp | null;
+        };
+        Update: Partial<Database["public"]["Tables"]["materials_catalog"]["Insert"]> & { id?: string };
+        Relationships: [];
+      };
       materials: {
         Row: {
           id: string;
