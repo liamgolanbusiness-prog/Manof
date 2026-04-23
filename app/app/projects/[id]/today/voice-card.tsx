@@ -4,9 +4,9 @@ import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Mic, Square, Trash2, Loader2 } from "lucide-react";
+import { Mic, Square, Trash2, Loader2, Sparkles } from "lucide-react";
 import { uploadVoiceNote } from "./upload-client";
-import { setVoiceNote } from "./actions";
+import { setVoiceNote, appendReportNotes } from "./actions";
 import { useToast } from "@/components/ui/use-toast";
 
 export function VoiceCard({
@@ -26,6 +26,7 @@ export function VoiceCard({
   const [elapsed, setElapsed] = useState(0);
   const [saving, startSaving] = useTransition();
   const [deleting, startDeleting] = useTransition();
+  const [transcribing, setTranscribing] = useState(false);
 
   const mediaRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
@@ -96,6 +97,7 @@ export function VoiceCard({
         await setVoiceNote(projectId, reportId, url);
         router.refresh();
         toast({ title: "הקלטה נשמרה", variant: "success" });
+        autoTranscribe(url);
       } catch (e) {
         toast({
           title: `שגיאה: ${(e as Error).message}`,
@@ -103,6 +105,29 @@ export function VoiceCard({
         });
       }
     });
+  }
+
+  async function autoTranscribe(url: string) {
+    try {
+      setTranscribing(true);
+      const res = await fetch("/api/ai/transcribe", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ url }),
+      });
+      if (res.status === 503) return;
+      if (!res.ok) return;
+      const data = (await res.json()) as { text?: string };
+      const text = (data.text ?? "").trim();
+      if (!text) return;
+      await appendReportNotes(projectId, reportId, text);
+      router.refresh();
+      toast({ title: "ההקלטה תומללה ונוספה להערות", variant: "success" });
+    } catch {
+      /* bonus, not critical */
+    } finally {
+      setTranscribing(false);
+    }
   }
 
   function removeNote() {
@@ -123,6 +148,12 @@ export function VoiceCard({
         <div className="flex items-center gap-2 text-sm font-medium">
           <Mic className="h-4 w-4 text-muted-foreground" />
           הודעה קולית
+          {transcribing ? (
+            <span className="flex items-center gap-1 text-xs text-primary">
+              <Sparkles className="h-3.5 w-3.5 animate-pulse" />
+              מתמלל...
+            </span>
+          ) : null}
         </div>
 
         {voiceNoteUrl && !recording ? (
