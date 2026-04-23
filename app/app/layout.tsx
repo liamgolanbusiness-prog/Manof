@@ -5,6 +5,7 @@ import { logoutAction } from "@/app/(auth)/login/actions";
 import { Button } from "@/components/ui/button";
 import { HardHat, LogOut, Plus, Search, Settings as SettingsIcon, User } from "lucide-react";
 import { OfflineBanner } from "@/components/offline-banner";
+import { InstallPrompt } from "@/components/install-prompt";
 import { getUserLocale } from "@/lib/i18n-server";
 import { t } from "@/lib/i18n";
 
@@ -72,6 +73,7 @@ export default async function AppLayout({
         </div>
       </header>
       <OfflineBanner />
+      <InstallPrompt />
       {/* Slim user strip */}
       <div className="container py-1 text-xs text-muted-foreground truncate">
         שלום, {displayName}
