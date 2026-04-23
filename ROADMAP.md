@@ -6,6 +6,18 @@ Each item is sized as **S** (<1 day), **M** (1–3 days), **L** (1+ weeks).
 
 ---
 
+## ✅ Shipped (night 2.1 — cycles 36–45)
+
+- Dashboard KPIs: revenue MoM + 12-week cashflow chart + expense-cat bars (C36)
+- Project templates — clone from existing project (C37)
+- Materials catalog — reusable items across projects, auto-learned (C38)
+- Data export (`/api/me/export`) + account deletion with email confirmation (C39)
+- Audit log with Postgres triggers on invoices/payments/expenses/changes (C40)
+- AI scaffolds: receipt OCR (Claude Vision) + voice transcription (Whisper) — NOOP when unconfigured (C41)
+- WhatsApp Business + Twilio SMS helpers (C42)
+- Web-push notifications (VAPID, hand-rolled) + SW handlers (C43)
+- Vitest + 15 green unit tests + GitHub Actions CI pipeline (C44)
+
 ## ✅ Shipped (tonight, cycles 20–34)
 
 - Business profile + tax info + invoice counters + logo (C20)
@@ -58,17 +70,11 @@ Scope:
 - Feature gates (free: 1 project / 3 invoices per month; pro: unlimited)
 - `subscription_status` column + grace period
 
-### P1 — Receipt OCR (M)
-Huge perceived value. User photographs receipt → AI extracts amount, supplier, date, category.
-- Claude Vision API call from server action
-- Cost: ~$0.005/image; can gate behind pro plan
-- Fallback: manual entry (current state)
+### P1 — Receipt OCR UI wiring (S)
+Backend done (C41). TODO: add "סרוק קבלה" button to ExpenseDialog that POSTs the receipt photo to `/api/ai/ocr-receipt` and auto-fills the form. ~1 hour of UI work once ANTHROPIC_API_KEY is set.
 
-### P1 — Voice → text (M)
-Already recording voice notes; transcribe them with Whisper.
-- Claude Haiku + audio, or OpenAI Whisper API
-- Auto-extract structured info: "דני עבד 8 שעות, קנינו שקעים ל-120" → attendance + expense rows
-- Differentiator nobody else has in the Israeli market
+### P1 — Voice → text UI wiring (S)
+Backend done (C41). TODO: after voice-note upload, call `transcribeAudio({url})`, write the returned text into `daily_reports.notes` as a draft the user can edit.
 
 ### P1 — True offline write queue (M)
 Complete the SW story. IndexedDB queue for:
@@ -77,11 +83,8 @@ Complete the SW story. IndexedDB queue for:
 - Photo upload (held in queue until online)
 - Expense create
 
-### P1 — WhatsApp Business API (M)
-Currently using `wa.me` deep links. Upgrade to proper WhatsApp Business Platform API:
-- Automated end-of-day summary to client
-- Invoice delivery via WhatsApp
-- 2-way replies from client into portal comments
+### P1 — WhatsApp + SMS push wiring (S)
+Backend done (C42). TODO: wire triggers — end-of-day daily report summary to client via WhatsApp, overdue-invoice SMS reminder, push notification on new change-order approval.
 
 ### P2 — Integrations with Israeli accounting (L)
 Pick one first:

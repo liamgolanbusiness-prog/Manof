@@ -578,6 +578,80 @@ See `ROADMAP.md` for what's next and `.env.local.example` for new env vars.
   deep link, manual copy-paste, or downloaded PDF attached themselves).
 - RLS untested — no automated test suite yet.
 
+---
+
+# Night 2.1 — 2026-04-23 — Cycles 36-45 (autonomous expansion)
+
+After "what's left" review, user said "start everything you can". Shipped
+10 more cycles targeting self-contained value and integration scaffolds that
+NOOP cleanly until keys are set. Multi-user/teams and payment processor
+still on roadmap (need structural decisions / user accounts).
+
+## Cycle 36 — Dashboard KPIs + 12-week cashflow
+Hero revenue card (MoM delta, %), invoices-this-month + overdue, 6 KPI tiles,
+12-week stacked cashflow chart (Tailwind-only), top-3 expense categories
+with relative bars. All computed server-side in the existing page render.
+
+## Cycle 37 — Project templates (clone from existing)
+cloneProjectAction copies project shell + roster + open tasks; leaves
+client/dates/history blank. TemplatePicker card under /app/projects/new.
+
+## Cycle 38 — Materials catalog
+0008_materials_catalog.sql — per-user reusable-items catalog with case-
+insensitive unique names + use_count. Auto-upsert on every createMaterial.
+New picker surfaces the top-50 most-used at the start of the material dialog.
+
+## Cycle 39 — Data export + account deletion
+/api/me/export streams a JSON bundle across 18 tables (joins child tables
+via FK-inner filters). Settings page: download button + type-email
+confirmation flow that cascades user-owned rows and calls
+supabase.auth.admin.deleteUser.
+
+## Cycle 40 — Audit log
+0009_audit_log.sql — audit_log + generic audit_writer() security-definer
+trigger on invoices/change_orders/payments/expenses. /app/settings/audit
+renders the last 200 entries with per-row summaries. Owner-only RLS;
+writes trigger-only.
+
+## Cycle 41 — AI scaffolds (OCR + voice)
+lib/ai/anthropic.ts fetch wrapper (no SDK dep). ocrReceipt returns typed
+ReceiptFields (amount, VAT, supplier, tax_id, date, category_hint) with
+Hebrew-tuned system prompt. transcribeAudio uses Whisper-1 with Hebrew
+language hint. Route /api/ai/ocr-receipt is session-gated + 20/hour
+rate-limited. Both NOOP gracefully without API keys.
+
+## Cycle 42 — WhatsApp + SMS helpers
+lib/channels/whatsapp.ts (Meta Cloud API, permanent-token auth) and
+lib/channels/sms.ts (Twilio REST, Israeli-mobile E.164 normalization).
+Narrow interface → swapping providers is a single-file change.
+
+## Cycle 43 — Web-push notifications scaffold
+0010_push_subscriptions.sql. lib/push.ts hand-rolls VAPID JWTs via Node
+crypto (no web-push dep). /api/push/subscribe upserts by endpoint.
+PushToggle in settings requests permission + subscribes + posts keys
+server-side. SW v2026-04-23-1 handles push + notificationclick with
+RTL Hebrew notifications. Triggers (overdue invoice, portal viewed,
+task due today) ready to wire.
+
+## Cycle 44 — Test harness + CI
+vitest 2.x installed, config with @ alias. 15 unit tests across
+invoice.ts (computeTotals VAT-excl/VAT-incl/discount/17% vs 18%,
+formatInvoiceNumber, lineTotal) and phone.ts (normalize/validate/
+format round-trips). Fixed lineTotal Infinity bug caught by tests.
+.github/workflows/ci.yml: lint → typecheck → test → build on PR + master.
+
+## Cycle 45 — Wrap
+Build/lint/test all green. PROGRESS.md + ROADMAP.md updated. Session
+summary: 26 cycles across 2 nights, 10 migrations, ~5000 LOC net,
+every commit a green build.
+
+## Night-2.1 env var surface (all optional, app works without)
+- ANTHROPIC_API_KEY — receipt OCR
+- OPENAI_API_KEY — voice transcription
+- WHATSAPP_PHONE_NUMBER_ID + WHATSAPP_ACCESS_TOKEN — WhatsApp sends
+- TWILIO_ACCOUNT_SID + TWILIO_AUTH_TOKEN + TWILIO_FROM_NUMBER — SMS
+- VAPID_PUBLIC_KEY + VAPID_PRIVATE_KEY + VAPID_SUBJECT + NEXT_PUBLIC_VAPID_PUBLIC_KEY — push
+
 
 
 
