@@ -183,6 +183,55 @@ export async function setInvoiceStatus(
   revalidatePath(`/app/projects/${projectId}/invoices`);
 }
 
+export async function emailInvoiceToClient(
+  projectId: string,
+  invoiceId: string
+): Promise<{ ok: boolean; error?: string }> {
+  const { supabase } = await assertProjectAccess(projectId);
+
+  const { data: invoice } = await supabase
+    .from("invoices")
+    .select("id, type, doc_number, client_email, total, project_id")
+    .eq("id", invoiceId)
+    .maybeSingle();
+  if (!invoice) return { ok: false, error: "חשבונית לא נמצאה" };
+  if (!invoice.client_email) return { ok: false, error: "אין אימייל ללקוח בחשבונית הזו" };
+
+  // Look up portal link for the project.
+  const { data: project } = await supabase
+    .from("projects")
+    .select("portal_token, name")
+    .eq("id", projectId)
+    .maybeSingle();
+
+  const { sendEmail, invoiceReadyEmail, isEmailConfigured } = await import(
+    "@/lib/email"
+  );
+  if (!isEmailConfigured()) {
+    return { ok: false, error: "שליחת מייל לא מוגדרת בשרת" };
+  }
+
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "";
+  const printUrl = `${appUrl}/invoices/${invoiceId}/print`;
+  const portalUrl = project?.portal_token
+    ? `${appUrl}/portal/${project.portal_token}`
+    : printUrl;
+  const amountStr = new Intl.NumberFormat("he-IL", {
+    style: "currency",
+    currency: "ILS",
+  }).format(Number(invoice.total));
+
+  const res = await sendEmail({
+    to: invoice.client_email,
+    subject: `חשבונית ${invoice.doc_number} מהפרויקט ${project?.name ?? ""}`,
+    html: invoiceReadyEmail(invoice.doc_number, portalUrl, amountStr),
+  });
+  if (!res.ok) return { ok: false, error: res.error ?? "שגיאה בשליחה" };
+
+  revalidatePath(`/app/projects/${projectId}/invoices`);
+  return { ok: true };
+}
+
 export async function deleteInvoice(projectId: string, invoiceId: string) {
   const { user, supabase } = await assertProjectAccess(projectId);
   // Only drafts can be fully deleted — issued tax_invoices must stay for audit.

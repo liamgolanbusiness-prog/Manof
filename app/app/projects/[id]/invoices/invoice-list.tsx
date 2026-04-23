@@ -17,12 +17,13 @@ import {
   Download,
   FileText,
   Loader2,
+  Mail,
   MoreVertical,
   Send,
   Trash2,
   X,
 } from "lucide-react";
-import { deleteInvoice, setInvoiceStatus } from "./actions";
+import { deleteInvoice, emailInvoiceToClient, setInvoiceStatus } from "./actions";
 
 type Row = {
   id: string;
@@ -129,6 +130,23 @@ export function InvoiceList({
                 >
                   <Send className="h-4 w-4" />
                   הנפק
+                </Button>
+              ) : null}
+              {status === "issued" || status === "accepted" ? (
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="tap"
+                  onClick={() => {
+                    withToast(async () => {
+                      const res = await emailInvoiceToClient(projectId, inv.id);
+                      if (!res.ok) throw new Error(res.error ?? "שגיאה");
+                    }, "נשלח במייל");
+                  }}
+                  disabled={pending}
+                  aria-label="שלח במייל"
+                >
+                  <Mail className="h-4 w-4" />
                 </Button>
               ) : null}
               {status === "issued" && type !== "quote" ? (
