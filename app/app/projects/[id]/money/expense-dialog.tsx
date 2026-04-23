@@ -22,7 +22,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { AlertCircle, Camera, Loader2, Plus } from "lucide-react";
+import { AlertCircle, Camera, Loader2, Plus, Sparkles } from "lucide-react";
 import { createExpense } from "./actions";
 import { uploadReceipt } from "../today/upload-client";
 import { useToast } from "@/components/ui/use-toast";
@@ -39,6 +39,20 @@ const EXPENSE_CATEGORIES = [
   { value: "rent", label: "שכ״ד ציוד" },
   { value: "other", label: "אחר" },
 ];
+
+// Map the Hebrew category_hint returned by the OCR model to our internal keys.
+const CATEGORY_HINTS: Record<string, string> = {
+  "חומרי בניין": "materials",
+  "חומרים": "materials",
+  "עבודה": "labor",
+  "כלים": "tools",
+  "דלק": "transport",
+  "הובלה": "transport",
+  "רישוי": "permits",
+  "משרד": "other",
+  "אוכל": "other",
+  "אחר": "other",
+};
 
 const PAYMENT_METHODS = [
   { value: "cash", label: "מזומן" },
@@ -118,12 +132,79 @@ export function ExpenseDialog({
   function handleFile(file: File) {
     startUploading(async () => {
       try {
-        const url = await uploadReceipt(projectId, file);
+        // Upload and run OCR in parallel — OCR uses the raw file (OCR server
+        // compresses internally if needed), upload uses the compressed copy.
+        const [url, ocrRes] = await Promise.all([
+          uploadReceipt(projectId, file),
+          runOcr(file),
+        ]);
         setReceiptUrl(url);
+        if (ocrRes) applyOcrFields(ocrRes);
       } catch (e) {
         toast({ title: `העלאה נכשלה: ${(e as Error).message}`, variant: "destructive" });
       }
     });
+  }
+
+  async function runOcr(file: File): Promise<Record<string, unknown> | null> {
+    try {
+      const fd = new FormData();
+      fd.set("file", file);
+      const res = await fetch("/api/ai/ocr-receipt", { method: "POST", body: fd });
+      if (res.status === 503) return null; // OCR not configured — silent
+      if (!res.ok) return null;
+      const data = (await res.json()) as Record<string, unknown>;
+      return data;
+    } catch {
+      return null;
+    }
+  }
+
+  function applyOcrFields(fields: Record<string, unknown>) {
+    let filled = 0;
+    if (typeof fields.amount === "number" && fields.amount > 0) {
+      setAmount(String(fields.amount));
+      filled++;
+    }
+    if (typeof fields.date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(fields.date)) {
+      setExpenseDate(fields.date);
+      filled++;
+    }
+    if (typeof fields.category_hint === "string") {
+      const mapped = CATEGORY_HINTS[fields.category_hint];
+      if (mapped) {
+        setCategory(mapped);
+        filled++;
+      }
+    }
+    if (typeof fields.supplier_name === "string" && fields.supplier_name) {
+      // Try to match an existing contact by name (case-insensitive partial).
+      const hit = contacts.find(
+        (c) =>
+          c.name.toLowerCase().includes((fields.supplier_name as string).toLowerCase()) ||
+          (fields.supplier_name as string).toLowerCase().includes(c.name.toLowerCase())
+      );
+      if (hit) {
+        setSupplierId(hit.id);
+        filled++;
+      }
+    }
+    const extraNotes: string[] = [];
+    if (typeof fields.supplier_name === "string" && !contacts.find((c) => c.name === fields.supplier_name)) {
+      extraNotes.push(`ספק: ${fields.supplier_name}`);
+    }
+    if (typeof fields.invoice_number === "string" && fields.invoice_number) {
+      extraNotes.push(`חשבונית ${fields.invoice_number}`);
+    }
+    if (extraNotes.length > 0) {
+      setNotes((prev) => [prev, ...extraNotes].filter(Boolean).join("\n"));
+    }
+    if (filled > 0) {
+      toast({
+        title: `סרוק — מולאו ${filled} שדות${fields.confidence ? ` (${fields.confidence})` : ""}`,
+        variant: "success",
+      });
+    }
   }
 
   return (
@@ -230,7 +311,10 @@ export function ExpenseDialog({
             </div>
           </div>
           <div className="space-y-1.5">
-            <Label>קבלה / חשבונית</Label>
+            <Label className="flex items-center gap-1.5">
+              קבלה / חשבונית
+              <Sparkles className="h-3.5 w-3.5 text-primary" aria-label="סריקה אוטומטית" />
+            </Label>
             <div className="flex items-center gap-2">
               <label className="tap inline-flex items-center gap-2 rounded-lg border bg-background px-3 h-11 text-sm cursor-pointer hover:bg-muted">
                 {uploading ? (
@@ -238,7 +322,7 @@ export function ExpenseDialog({
                 ) : (
                   <Camera className="h-4 w-4" />
                 )}
-                {receiptUrl ? "החלף" : "צלם/העלה"}
+                {receiptUrl ? "החלף" : "צלם/סרוק קבלה"}
                 <input
                   type="file"
                   accept="image/*"
@@ -258,6 +342,9 @@ export function ExpenseDialog({
                 </a>
               ) : null}
             </div>
+            <p className="text-xs text-muted-foreground">
+              נסה לצלם קבלה — נמלא אוטומטית את הסכום, הספק והתאריך.
+            </p>
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="e-notes">הערות</Label>
