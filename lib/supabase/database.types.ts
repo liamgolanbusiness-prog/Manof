@@ -522,6 +522,40 @@ export interface Database {
         };
         Relationships: [];
       };
+      change_orders: {
+        Row: {
+          id: string;
+          project_id: string;
+          user_id: string;
+          title: string;
+          description: string | null;
+          amount_change: number;
+          status: string;
+          signed_by_name: string | null;
+          signed_at: Timestamp | null;
+          rejected_at: Timestamp | null;
+          rejected_reason: string | null;
+          created_at: Timestamp | null;
+          updated_at: Timestamp | null;
+        };
+        Insert: {
+          id?: string;
+          project_id: string;
+          user_id: string;
+          title: string;
+          description?: string | null;
+          amount_change?: number;
+          status?: string;
+          signed_by_name?: string | null;
+          signed_at?: Timestamp | null;
+          rejected_at?: Timestamp | null;
+          rejected_reason?: string | null;
+          created_at?: Timestamp | null;
+          updated_at?: Timestamp | null;
+        };
+        Update: Partial<Database["public"]["Tables"]["change_orders"]["Insert"]> & { id?: string };
+        Relationships: [];
+      };
       invoices: {
         Row: {
           id: string;
@@ -711,6 +745,17 @@ export type IssueStatus = (typeof ISSUE_STATUSES)[number];
 
 export const TASK_STATUSES = ["open", "done"] as const;
 export type TaskStatus = (typeof TASK_STATUSES)[number];
+
+export type ChangeOrder = Database["public"]["Tables"]["change_orders"]["Row"];
+export type ChangeOrderInsert = Database["public"]["Tables"]["change_orders"]["Insert"];
+export const CHANGE_ORDER_STATUSES = ["pending", "approved", "rejected", "cancelled"] as const;
+export type ChangeOrderStatus = (typeof CHANGE_ORDER_STATUSES)[number];
+export const CHANGE_ORDER_STATUS_LABELS: Record<ChangeOrderStatus, string> = {
+  pending: "ממתין לאישור",
+  approved: "מאושר",
+  rejected: "נדחה",
+  cancelled: "בוטל",
+};
 
 export type Invoice = Database["public"]["Tables"]["invoices"]["Row"];
 export type InvoiceInsert = Database["public"]["Tables"]["invoices"]["Insert"];

@@ -1,4 +1,6 @@
-import { FileText, Plus } from "lucide-react";
+import Link from "next/link";
+import { FileText, FileEdit, Plus } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { requireUser } from "@/lib/auth";
@@ -70,6 +72,13 @@ export default async function InvoicesTab({
           <FileText className="h-5 w-5 text-primary" />
           חשבוניות והצעות מחיר
         </h1>
+        <div className="flex items-center gap-2">
+          <Link href={`/app/projects/${params.id}/changes`}>
+            <Button variant="outline" size="sm" className="gap-1">
+              <FileEdit className="h-4 w-4" />
+              שינויי חוזה
+            </Button>
+          </Link>
         <NewInvoiceButton
           projectId={project.id}
           projectClientName={project.client_name ?? ""}
@@ -80,6 +89,7 @@ export default async function InvoicesTab({
           defaultFooter={profile?.invoice_footer ?? ""}
           clients={contacts ?? []}
         />
+        </div>
       </div>
 
       {notConfigured ? (

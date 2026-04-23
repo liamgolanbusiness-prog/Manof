@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import { INVOICE_TYPE_LABELS, type InvoiceType } from "@/lib/supabase/database.types";
 import { acceptQuoteAction } from "./accept-quote/actions";
+import { approveChangeAction } from "./approve-change/actions";
 
 export const dynamic = "force-dynamic";
 
@@ -31,7 +32,7 @@ export default async function PortalPage({
   searchParams,
 }: {
   params: { token: string };
-  searchParams: { pin_error?: string; accepted?: string };
+  searchParams: { pin_error?: string; accepted?: string; change_approved?: string };
 }) {
   if (!params.token || params.token.length < 8) notFound();
 
@@ -139,6 +140,12 @@ export default async function PortalPage({
       .order("issue_date", { ascending: false }),
   ]);
 
+  const { data: changesData } = await supabase
+    .from("change_orders")
+    .select("id, title, description, amount_change, status, signed_by_name, signed_at, created_at")
+    .eq("project_id", project.id)
+    .order("created_at", { ascending: false });
+
   const photos = photosRes.data ?? [];
   const totalIn = (payInRes.data ?? []).reduce((s, p) => s + Number(p.amount), 0);
   const contract = Number(project.contract_value ?? 0);
@@ -148,6 +155,10 @@ export default async function PortalPage({
   const otherDocs = docs.filter((d) => !(d.type === "quote" && d.status === "issued"));
   const acceptedParam =
     typeof searchParams?.accepted === "string" ? searchParams.accepted : undefined;
+  const changeApprovedParam =
+    typeof searchParams?.change_approved === "string" ? searchParams.change_approved : undefined;
+  const pendingChanges = (changesData ?? []).filter((c) => c.status === "pending");
+  const resolvedChanges = (changesData ?? []).filter((c) => c.status !== "pending" && c.status !== "cancelled");
 
   return (
     <div lang="he" dir="rtl" className="min-h-screen bg-muted/30">
@@ -280,6 +291,115 @@ export default async function PortalPage({
           <section className="rounded-2xl border border-success/30 bg-success/10 p-4 flex items-center gap-2 text-sm">
             <CheckCircle2 className="h-5 w-5 text-success shrink-0" />
             <span>הצעת המחיר התקבלה. תודה!</span>
+          </section>
+        ) : null}
+        {changeApprovedParam ? (
+          <section className="rounded-2xl border border-success/30 bg-success/10 p-4 flex items-center gap-2 text-sm">
+            <CheckCircle2 className="h-5 w-5 text-success shrink-0" />
+            <span>השינוי אושר. תודה!</span>
+          </section>
+        ) : null}
+
+        {pendingChanges.length > 0 ? (
+          <section className="space-y-2">
+            <h2 className="text-lg font-semibold flex items-center gap-2">
+              <FileText className="h-5 w-5 text-warning" />
+              שינויים לאישור ({pendingChanges.length})
+            </h2>
+            <ul className="space-y-3">
+              {pendingChanges.map((c) => (
+                <li key={c.id} className="rounded-2xl border border-warning/30 bg-warning/5 p-4 space-y-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <div>
+                      <div className="font-semibold">{c.title}</div>
+                      {c.description ? (
+                        <div className="text-sm text-muted-foreground whitespace-pre-line mt-1">
+                          {c.description}
+                        </div>
+                      ) : null}
+                    </div>
+                    <div
+                      className={
+                        "text-lg font-bold " + (Number(c.amount_change) < 0 ? "text-destructive" : "")
+                      }
+                      dir="ltr"
+                    >
+                      {Number(c.amount_change) > 0 ? "+" : ""}
+                      {new Intl.NumberFormat("he-IL", {
+                        style: "currency",
+                        currency: "ILS",
+                        maximumFractionDigits: 0,
+                      }).format(Number(c.amount_change))}
+                    </div>
+                  </div>
+                  <details>
+                    <summary className="cursor-pointer text-primary text-sm">
+                      לחץ לאישור השינוי
+                    </summary>
+                    <form action={approveChangeAction} className="mt-3 space-y-2 rounded-xl bg-muted/50 p-3">
+                      <input type="hidden" name="token" value={params.token} />
+                      <input type="hidden" name="change_id" value={c.id} />
+                      <label className="text-xs text-muted-foreground">
+                        הקלד את שמך לאישור:
+                      </label>
+                      <input
+                        name="typed_name"
+                        required
+                        className="w-full rounded-xl border bg-background px-3 py-2 text-sm"
+                        placeholder="שם מלא"
+                      />
+                      <button
+                        type="submit"
+                        className="w-full rounded-xl bg-primary text-primary-foreground font-semibold h-11"
+                      >
+                        אני מאשר את השינוי
+                      </button>
+                    </form>
+                  </details>
+                </li>
+              ))}
+            </ul>
+          </section>
+        ) : null}
+
+        {resolvedChanges.length > 0 ? (
+          <section className="space-y-2">
+            <h2 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+              שינויים שאושרו/נדחו
+            </h2>
+            <ul className="space-y-1.5 text-sm">
+              {resolvedChanges.map((c) => (
+                <li
+                  key={c.id}
+                  className="rounded-xl border bg-card/60 px-3 py-2 flex items-center justify-between gap-2"
+                >
+                  <div>
+                    <span className="font-medium">{c.title}</span>
+                    {c.status === "approved" && c.signed_by_name ? (
+                      <span className="text-xs text-muted-foreground">
+                        {" "}· אושר ע״י {c.signed_by_name}
+                      </span>
+                    ) : null}
+                    {c.status === "rejected" ? (
+                      <span className="text-xs text-destructive"> · נדחה</span>
+                    ) : null}
+                  </div>
+                  <span
+                    className={
+                      "font-semibold " + (Number(c.amount_change) < 0 ? "text-destructive" : "")
+                    }
+                    dir="ltr"
+                  >
+                    {Number(c.amount_change) > 0 ? "+" : ""}
+                    {new Intl.NumberFormat("he-IL", {
+                      style: "currency",
+                      currency: "ILS",
+                      maximumFractionDigits: 0,
+                    }).format(Number(c.amount_change))}
+                  </span>
+                </li>
+              ))}
+            </ul>
           </section>
         ) : null}
 
