@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
 import { ServiceWorkerRegister } from "@/components/sw-register";
+import { Analytics } from "@/components/analytics";
 
 export const metadata: Metadata = {
   title: "אתר — ניהול אתרי בנייה",
@@ -39,6 +40,7 @@ export default function RootLayout({
         <div className="phone-frame">{children}</div>
         <Toaster />
         <ServiceWorkerRegister />
+        <Analytics />
       </body>
     </html>
   );
