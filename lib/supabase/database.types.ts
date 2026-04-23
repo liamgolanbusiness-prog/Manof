@@ -180,6 +180,54 @@ export interface Database {
         };
         Relationships: [];
       };
+      recurring_invoice_templates: {
+        Row: {
+          id: string;
+          user_id: string;
+          project_id: string | null;
+          type: string;
+          frequency: string;
+          next_issue_date: ISODate;
+          active: boolean;
+          client_name: string | null;
+          client_tax_id: string | null;
+          client_email: string | null;
+          client_phone: string | null;
+          client_address: string | null;
+          items: Json;
+          vat_rate: number;
+          vat_included: boolean;
+          notes: string | null;
+          footer: string | null;
+          last_issued_at: Timestamp | null;
+          created_at: Timestamp | null;
+          updated_at: Timestamp | null;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          project_id?: string | null;
+          type?: string;
+          frequency?: string;
+          next_issue_date: ISODate;
+          active?: boolean;
+          client_name?: string | null;
+          client_tax_id?: string | null;
+          client_email?: string | null;
+          client_phone?: string | null;
+          client_address?: string | null;
+          items?: Json;
+          vat_rate?: number;
+          vat_included?: boolean;
+          notes?: string | null;
+          footer?: string | null;
+          last_issued_at?: Timestamp | null;
+          created_at?: Timestamp | null;
+          updated_at?: Timestamp | null;
+        };
+        Update: Partial<Database["public"]["Tables"]["recurring_invoice_templates"]["Insert"]> & { id?: string };
+        Relationships: [];
+      };
       project_collaborators: {
         Row: {
           id: string;
