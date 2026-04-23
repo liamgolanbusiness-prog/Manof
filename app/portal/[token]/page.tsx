@@ -115,6 +115,12 @@ export default async function PortalPage({
         tag: `portal-view-${project.id}`,
         url: `/app/projects/${project.id}/client`,
       }).catch(() => {});
+      const { fireWebhook } = await import("@/lib/webhooks");
+      fireWebhook(project.user_id, "portal.viewed", {
+        project_id: project.id,
+        project_name: project.name,
+        client_name: project.client_name ?? null,
+      }).catch(() => {});
     }
   } catch {
     // Don't block page render on telemetry failures.

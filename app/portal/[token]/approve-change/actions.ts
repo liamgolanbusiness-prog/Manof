@@ -61,6 +61,20 @@ export async function approveChangeAction(formData: FormData) {
     })
     .eq("id", changeId);
 
+  const { data: owner } = await ctx.supabase
+    .from("projects")
+    .select("user_id")
+    .eq("id", ctx.project.id)
+    .maybeSingle();
+  if (owner?.user_id) {
+    const { fireWebhook } = await import("@/lib/webhooks");
+    fireWebhook(owner.user_id, "change_order.approved", {
+      change_order_id: changeId,
+      project_id: ctx.project.id,
+      signed_by_name: typedName.slice(0, 120),
+    }).catch(() => {});
+  }
+
   redirect(`/portal/${token}?change_approved=${changeId}`);
 }
 

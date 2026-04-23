@@ -4,7 +4,7 @@ import { BusinessForm } from "./business-form";
 import { DangerZone } from "./danger-zone";
 import { PushToggle } from "@/components/push-toggle";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Building2, Crown, Globe, ShieldAlert, ShieldCheck } from "lucide-react";
+import { Building2, Crown, Globe, Repeat, ShieldAlert, ShieldCheck } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { LocaleSwitcher } from "./locale-switcher";
@@ -67,6 +67,23 @@ export default async function SettingsPage() {
             <Button variant="outline" size="sm">
               נהל מנוי
             </Button>
+          </Link>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            <Repeat className="h-4 w-4 text-primary" />
+            חשבוניות חוזרות
+          </CardTitle>
+          <CardDescription>
+            ריטיינר חודשי, דמי ניהול, שירות שנתי — הגדר פעם אחת והמערכת תנפיק אוטומטית.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Link href="/app/settings/recurring">
+            <Button variant="outline" size="sm">נהל תבניות</Button>
           </Link>
         </CardContent>
       </Card>

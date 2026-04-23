@@ -90,6 +90,17 @@ export async function createPayment(input: {
     notes: input.notes,
   });
   if (error) throw new Error(error.message);
+
+  if (input.direction === "in") {
+    const { fireWebhook } = await import("@/lib/webhooks");
+    fireWebhook(user.id, "payment.received", {
+      project_id: input.projectId,
+      amount,
+      method: input.method,
+      payment_date: input.payment_date,
+      invoice_number: input.invoice_number,
+    }).catch(() => {});
+  }
   revalidatePath(`/app/projects/${input.projectId}/money`);
 }
 
