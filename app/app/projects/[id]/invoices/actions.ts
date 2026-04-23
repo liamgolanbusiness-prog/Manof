@@ -75,9 +75,14 @@ export async function createInvoiceAction(input: {
     receipt: "allocate_receipt_number",
     tax_receipt: "allocate_invoice_number",
   };
-  // Our database.types don't declare these RPCs yet; cast to a loose type.
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const rpcSupabase = supabase as any;
+  // Our database.types don't declare these RPCs yet; cast via unknown to
+  // keep eslint + typescript both happy.
+  const rpcSupabase = supabase as unknown as {
+    rpc: (
+      fn: string,
+      args: Record<string, unknown>
+    ) => Promise<{ data: number | null; error: { message: string } | null }>;
+  };
   const { data: numInt, error: rpcErr } = await rpcSupabase.rpc(rpcName[input.type], {
     p_user_id: user.id,
   });

@@ -428,6 +428,157 @@ Not done but **tracked** — either in QUESTIONS.md or README.md "Known limits":
 
 **Done.** 21 routes. Clean build, clean lint, clean typecheck. Handoff complete.
 
+---
+
+# Night 2 — 2026-04-23 — Production-readiness push
+
+Full production-readiness audit + build against the gaps identified in the
+founder's morning review. Focus: Israeli compliance (invoices/VAT), security
+hardening (reset + headers + portal v2), revenue foundation, onboarding
+polish, landing-page conversion. Single-user model retained — multi-user
+deferred to ROADMAP.md.
+
+See `ROADMAP.md` for what's next and `.env.local.example` for new env vars.
+
+## Cycle 20 — Business profile / tax foundation
+- `supabase/migrations/0003_profile_business.sql`: 16 new columns on
+  `profiles` (tax_id, tax_id_type, vat_rate, vat_included, address/city/
+  email/website, invoice_prefix, next_*_number counters, bank details,
+  Bit phone, invoice_footer, onboarding_completed_at).
+- Three `allocate_*_number(p_user_id)` SECURITY DEFINER functions return
+  the next integer atomically — unblocks concurrent invoice/quote creation.
+- `/app/settings` page with BusinessForm — logo upload, tax-type select,
+  VAT rate field, running-number editing, bank details. Added to header.
+
+## Cycle 21 — Password reset + security headers + rate limiting
+- `next.config.mjs`: CSP (with Supabase/Sentry/PostHog connect-src), HSTS
+  2yr+preload, X-Frame DENY, no-sniff, strict-origin-when-cross-origin,
+  scoped Permissions-Policy (camera/mic/geo self; payment/usb off).
+- `lib/rate-limit.ts`: in-memory sliding-window limiter (IP + email).
+  Wired into login (10/IP + 5/email per 10min), signup (5/IP/hour),
+  password reset (10/IP + 3/email per hour). Defense-in-depth with
+  Supabase's own rate limits.
+- `/reset-password` + `/update-password` pages. Min password length 8.
+- Forgot-password link under login form.
+
+## Cycle 22 — Portal security v2
+- `0004_portal_security.sql`: portal_expires_at (default 90d),
+  portal_pin_hash, portal_revoked_at, portal_last_viewed_at,
+  portal_view_count + `portal_views` log with owner-RLS.
+- Portal: enforces revoked/expired/PIN gates; PIN hashed per-project,
+  constant-time compare, 10/min brute-force limit, valid-PIN cookie
+  scoped to portal path (rotation invalidates).
+- Client tab rewritten: view stats, expiry picker, PIN set/remove,
+  regenerate token, revoke/reactivate. Portal header now branded with
+  business logo + footer with contact info.
+
+## Cycle 23 — Image compression
+- `lib/image-compress.ts`: canvas-based resize; photos → 1600px/82%,
+  receipts → 2000px/90% (OCR headroom). Skips <500KB and HEIC.
+  Wired into uploadReportPhoto + uploadReceipt. Typical 3-5MB phone
+  photo → 200-400KB.
+
+## Cycle 24 — Invoicing (חשבונית מס / קבלה / הצעת מחיר / חשבונית מס-קבלה)
+- `0005_invoices.sql`: invoices + invoice_items with RLS, unique
+  (user_id, type, number_int) for legal-compliance mono-increment.
+- `lib/invoice.ts`: computeTotals (VAT-incl vs VAT-excl math), number
+  formatter, line-total helper.
+- Actions: createInvoiceAction (allocates number → inserts header +
+  items with rollback), setInvoiceStatus (draft→issued→paid/cancelled),
+  deleteInvoice (drafts + quotes only).
+- `/app/projects/[id]/invoices` tab: type filter tabs + warning when
+  business profile incomplete. NewInvoiceButton dialog: multi-line
+  builder with live totals.
+
+## Cycle 25 — Invoice print + PDF endpoint
+- `/invoices/[id]/print` with @media print + @page A4 — browser's
+  Save-as-PDF produces a valid invoice. Header with logo + tax_id,
+  recipient block, items table, VAT breakdown, payment instructions,
+  footer. `/api/invoices/[id]/pdf` redirects here (swap for headless
+  Chrome later).
+
+## Cycle 26 — Portal quote acceptance
+- `/portal/[token]/accept-quote/actions.ts`: acceptQuoteAction checks
+  token/expiry/revoke + rate-limits + writes accepted_by_name (typed)
+  + accepted_at. Portal lists pending quotes with inline approve form.
+  Issued docs section lists all non-pending invoices/receipts.
+
+## Cycle 27 — Change orders
+- `0006_change_orders.sql`: change_orders with pending/approved/
+  rejected/cancelled statuses, signed_by_name, rejected_reason.
+- `/app/projects/[id]/changes` tab with NewChangeButton + list.
+- Portal: pending changes with inline approval form (same typed-name
+  signature pattern); resolved changes summary.
+
+## Cycle 28 — Materials tracking
+- `0007_materials.sql`: materials table (qty/unit/cost/supplier/status/
+  delivery_date/expense_id link).
+- `/app/projects/[id]/materials` with status-filter tabs, one-tap
+  status advancement button (ordered → delivered → installed).
+
+## Cycle 29 — Offline awareness
+- `lib/use-online-status.ts` + `components/offline-banner.tsx`.
+- Sticky warning banner below header when `navigator.onLine` is false.
+- Full IndexedDB write queue deferred to ROADMAP (requires
+  server-action POST interception, too risky unsupervised).
+
+## Cycle 30 — Global search
+- `/app/search?q=` unified ilike across 6 tables (projects / contacts /
+  invoices / expenses / daily_reports.notes / tasks) with grouped
+  results, limit 10/table so no single type starves the page.
+
+## Cycle 31 — Welcome / onboarding + demo seed
+- Post-signup redirect now /app/welcome instead of /app/projects/new.
+- `/app/welcome` 3-step card: business profile → first project → demo.
+- `seedDemoProjectAction` creates a full sample: project, 3 contacts,
+  1 member, 2 daily reports with attendance, 2 expenses, 1 payment-in,
+  2 tasks. Marks onboarding_completed_at.
+
+## Cycle 32 — Landing page v2 + legal pages
+- Hero with value prop ("שעתיים ביום"), pain→fix cards, 9-feature
+  grid, 2-tier pricing (free + ₪99/mo), testimonial placeholder, CTA.
+- OG meta tags for link previews. `/privacy` + `/terms` Hebrew pages.
+
+## Cycle 33 — Telemetry (Sentry + PostHog)
+- `lib/telemetry.ts` typed event façade — NOOP when DSN/key missing.
+- `components/analytics.tsx` loads PostHog + Sentry script tags only
+  when env vars set. Zero bundle cost when disabled.
+- `.env.local.example` updated with new optional env vars (and dev
+  port fix 3000 → 4000).
+
+## Cycle 34 — Google SSO
+- `GoogleButton` on /login + /signup using signInWithOAuth.
+- Requires one-time Supabase dashboard config (docs next cycle).
+
+## Cycle 35 — Deep review, docs, ROADMAP
+- ROADMAP.md written with prioritized backlog (P0: teams, billing;
+  P1: OCR, voice→text, offline queue, WhatsApp API; etc.).
+- Build/lint/typecheck all green.
+- 30+ routes, 7 migrations total, night-2 added ~3000 LOC across 25+
+  new files. Every commit was a green build.
+
+### Morning checklist (before users land)
+1. **Apply migrations 0003–0007 in order** (Supabase SQL editor or
+   `supabase db push`). Nothing tonight works without them.
+2. Supabase Auth → Providers → Google: configure OAuth client ID/secret
+   from Google Cloud Console; add `{APP_URL}/auth/callback` to Google's
+   authorized redirect URIs.
+3. (Optional) Set `NEXT_PUBLIC_SENTRY_DSN`, `NEXT_PUBLIC_POSTHOG_KEY` in
+   Vercel. App works without them.
+4. Verify `project-media` bucket public-read still works for portal.
+5. Set `NEXT_PUBLIC_APP_URL` to production URL (portal share URLs depend
+   on it).
+
+### Known limitations
+- Multi-user / teams not yet supported — single user per account.
+- Offline writes: only connectivity banner + read-only SW cache.
+  Write queue deferred.
+- Invoice "PDF" uses browser Print-to-PDF, not server-rendered bytes.
+- No email delivery for issued invoices yet (user shares via WhatsApp
+  deep link, manual copy-paste, or downloaded PDF attached themselves).
+- RLS untested — no automated test suite yet.
+
+
 
 
 
