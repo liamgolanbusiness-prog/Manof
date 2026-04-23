@@ -147,6 +147,9 @@ create policy projects_delete on public.projects
 
 -- Child tables: replace the plain user_id = auth.uid() with a collab-aware
 -- policy keyed on project_id. Each table has `project_id` already.
+-- Defensive: silently skip tables that don't yet exist — lets 0013 run
+-- even if later migrations haven't been applied yet; re-run 0013 after
+-- applying 0005-0007 and it'll catch up the remaining tables.
 do $$
 declare tbl text;
 begin
@@ -155,7 +158,12 @@ begin
     'change_orders','materials','worker_payments'
   ]
   loop
+    if to_regclass(format('public.%s', tbl)) is null then
+      continue;
+    end if;
     execute format('drop policy if exists %1$s_self_all on public.%1$s', tbl);
+    execute format('drop policy if exists %1$s_read on public.%1$s', tbl);
+    execute format('drop policy if exists %1$s_write on public.%1$s', tbl);
     execute format(
       'create policy %1$s_read on public.%1$s for select using (has_project_access(project_id))',
       tbl
