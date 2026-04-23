@@ -97,6 +97,20 @@ export async function signupAction(
       .is("full_name", null);
   }
 
+  // Fire-and-forget welcome email (no-op when RESEND_API_KEY missing).
+  try {
+    const { sendEmail, welcomeEmail, isEmailConfigured } = await import("@/lib/email");
+    if (isEmailConfigured() && data.user?.email) {
+      sendEmail({
+        to: data.user.email,
+        subject: "ברוך הבא לאתר",
+        html: welcomeEmail(fullName),
+      }).catch(() => {});
+    }
+  } catch {
+    // swallow
+  }
+
   revalidatePath("/", "layout");
   redirect("/app/welcome");
 }
