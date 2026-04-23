@@ -34,12 +34,27 @@ export async function ensureTodayReport(projectId: string) {
 
   if (existing) return existing;
 
+  // Fetch weather for the project's address — no-op if no address set.
+  const { data: proj } = await supabase
+    .from("projects")
+    .select("address")
+    .eq("id", projectId)
+    .maybeSingle();
+  let weather: string | null = null;
+  try {
+    const { fetchWeatherForAddress } = await import("@/lib/weather");
+    weather = await fetchWeatherForAddress(proj?.address ?? null);
+  } catch {
+    weather = null;
+  }
+
   const { data, error } = await supabase
     .from("daily_reports")
     .insert({
       project_id: projectId,
       user_id: user.id,
       report_date: today,
+      weather,
     })
     .select("id, weather, notes, locked, report_date, updated_at")
     .single();
