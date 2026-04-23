@@ -180,6 +180,30 @@ export interface Database {
         };
         Relationships: [];
       };
+      project_collaborators: {
+        Row: {
+          id: string;
+          project_id: string;
+          user_id: string | null;
+          invited_email: string | null;
+          role: string;
+          invited_by: string | null;
+          invited_at: Timestamp | null;
+          accepted_at: Timestamp | null;
+        };
+        Insert: {
+          id?: string;
+          project_id: string;
+          user_id?: string | null;
+          invited_email?: string | null;
+          role?: string;
+          invited_by?: string | null;
+          invited_at?: Timestamp | null;
+          accepted_at?: Timestamp | null;
+        };
+        Update: Partial<Database["public"]["Tables"]["project_collaborators"]["Insert"]> & { id?: string };
+        Relationships: [];
+      };
       portal_views: {
         Row: {
           id: string;
@@ -933,6 +957,17 @@ export const INVOICE_STATUS_LABELS: Record<InvoiceStatus, string> = {
   paid: "שולם",
   cancelled: "בוטל",
   expired: "פג תוקף",
+};
+
+export type ProjectCollaborator = Database["public"]["Tables"]["project_collaborators"]["Row"];
+export type ProjectCollaboratorInsert = Database["public"]["Tables"]["project_collaborators"]["Insert"];
+export const COLLAB_ROLES = ["owner", "admin", "editor", "viewer"] as const;
+export type CollabRole = (typeof COLLAB_ROLES)[number];
+export const COLLAB_ROLE_LABELS: Record<CollabRole, string> = {
+  owner: "בעלים",
+  admin: "מנהל",
+  editor: "עורך",
+  viewer: "צופה",
 };
 
 export const TAX_ID_TYPES = ["osek_patur", "osek_morshe", "company", "individual"] as const;
