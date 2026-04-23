@@ -165,6 +165,20 @@ export async function deleteAccountAction() {
   redirect("/?deleted=1");
 }
 
+export async function setLocaleAction(locale: "he" | "ar" | "en") {
+  const user = await requireUser();
+  const supabase = createClient();
+  if (!["he", "ar", "en"].includes(locale)) {
+    throw new Error("שפה לא תקינה");
+  }
+  const { error } = await supabase
+    .from("profiles")
+    .update({ locale })
+    .eq("id", user.id);
+  if (error) throw new Error(error.message);
+  revalidatePath("/", "layout");
+}
+
 export async function markOnboardingComplete() {
   const user = await requireUser();
   const supabase = createClient();

@@ -4,9 +4,11 @@ import { BusinessForm } from "./business-form";
 import { DangerZone } from "./danger-zone";
 import { PushToggle } from "@/components/push-toggle";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Building2, Crown, ShieldAlert, ShieldCheck } from "lucide-react";
+import { Building2, Crown, Globe, ShieldAlert, ShieldCheck } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { LocaleSwitcher } from "./locale-switcher";
+import type { Locale } from "@/lib/i18n";
 
 export const metadata = { title: "הגדרות עסק · אתר" };
 
@@ -35,6 +37,21 @@ export default async function SettingsPage() {
         </CardHeader>
         <CardContent>
           <BusinessForm profile={profile ?? { id: user.id }} email={user.email ?? ""} />
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            <Globe className="h-4 w-4 text-primary" />
+            שפה
+          </CardTitle>
+          <CardDescription>
+            עברית (ברירת מחדל) / العربية / English.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <LocaleSwitcher current={(profile?.locale ?? "he") as Locale} />
         </CardContent>
       </Card>
 

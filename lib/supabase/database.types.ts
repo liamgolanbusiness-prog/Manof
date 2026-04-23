@@ -44,6 +44,7 @@ export interface Database {
           subscription_status: string | null;
           subscription_ends_at: Timestamp | null;
           trial_ends_at: Timestamp | null;
+          locale: string | null;
           created_at: Timestamp | null;
         };
         Insert: {
@@ -74,6 +75,7 @@ export interface Database {
           subscription_status?: string | null;
           subscription_ends_at?: Timestamp | null;
           trial_ends_at?: Timestamp | null;
+          locale?: string | null;
           created_at?: Timestamp | null;
         };
         Update: {
@@ -104,6 +106,7 @@ export interface Database {
           subscription_status?: string | null;
           subscription_ends_at?: Timestamp | null;
           trial_ends_at?: Timestamp | null;
+          locale?: string | null;
           created_at?: Timestamp | null;
         };
         Relationships: [];
