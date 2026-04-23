@@ -107,20 +107,3 @@ export type TKey = keyof typeof he;
 export function t(locale: Locale, key: TKey): string {
   return DICT[locale][key] ?? he[key];
 }
-
-// Fetch user's locale server-side (default 'he' when profile missing).
-export async function getUserLocale(): Promise<Locale> {
-  const { createClient } = await import("@/lib/supabase/server");
-  const supabase = createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return "he";
-  const { data } = await supabase
-    .from("profiles")
-    .select("locale")
-    .eq("id", user.id)
-    .maybeSingle();
-  const loc = data?.locale as Locale | undefined;
-  return loc && (loc === "he" || loc === "ar" || loc === "en") ? loc : "he";
-}
