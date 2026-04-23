@@ -713,6 +713,81 @@ next/headers. Build/lint/test/typecheck all green.
 - 15 passing unit tests + GitHub Actions CI pipeline
 - Every commit a green build
 
+---
+
+# Night 2.3 — 2026-04-23 — Cycles 56-65 (teams + revenue moat)
+
+## Cycle 56 — Teams foundation
+0013_teams.sql: project_collaborators (owner/admin/editor/viewer) + two
+SECURITY DEFINER helpers (has_project_access, has_project_write). RLS
+migrated across projects + 9 child tables. auth.users INSERT trigger
+auto-accepts pending invites by email. Additive — projects.user_id stays
+canonical owner.
+
+## Cycle 57 — Team UI in project settings
+inviteCollaborator (resolves email → existing user auto-accept, else
+pending row); Resend email with deep-link or /signup?invite=... URL.
+TeamSection: email + role picker, collaborator list with inline role
+switch + remove.
+
+## Cycle 58 — Plan gate enforcement
+createProjectAction + createInvoiceAction call checkProjectLimit /
+checkInvoiceLimit. Free tier: 1 active project + 3 invoices/month.
+Over-limit returns a friendly Hebrew error pointing to /app/billing.
+Trial users treated as pro.
+
+## Cycle 59 — Email invoice to client
+emailInvoiceToClient server action composes invoiceReadyEmail via
+Resend with portal or print URL. Mail-icon button on issued/accepted
+invoices.
+
+## Cycle 60 — Signature canvas
+SignaturePad client component (pointer events, DPR-aware canvas, PNG
+data-URL via hidden input). Quote accept + change approve portal forms
+now capture both typed name AND optional signature. Schema: invoices.
+accepted_signature_url + change_orders.signed_signature_url (<200KB
+validated).
+
+## Cycle 61 — Recurring invoices
+0014_recurring_invoices.sql: recurring_invoice_templates (frequency
+weekly→yearly, items jsonb, next_issue_date). /api/cron/recurring-
+invoices bearer-authed endpoint issues due templates atomically,
+advances next_issue_date. vercel.json schedules 06:00.
+
+## Cycle 62 — Outbound webhooks
+0015_webhooks.sql: webhooks (url, events[], HMAC secret, last_status).
+lib/webhooks.ts fireWebhook fans out to subscribers filtered by event,
+HMAC-SHA256 signs body in x-atar-signature, 10s timeout, records
+last status/error. /app/settings/developer WebhookManager with chip-
+pick events + one-time-view secret. Wired into invoice status changes
++ quote accept.
+
+## Cycle 63 — i18n sweep
+App layout + dashboard header now pipe t(locale, key) — Arabic/English
+users see translated nav labels + greeting on every page load.
+
+## Cycle 64 — PWA install prompt
+InstallPrompt component handles Android beforeinstallprompt + iOS
+Safari manual instructions. Persistent localStorage dismissal.
+
+## Cycle 65 — Wrap
+Build/lint/test/typecheck all green. 46 cycles total across 3 nights.
+15 migrations (0001–0015). Each commit a passing gate.
+
+## Cumulative state at end of night 2.3
+- 46 cycles total
+- 15 migrations (0001–0015)
+- ~95 new files since cycle 19
+- Teams (owner/admin/editor/viewer), plan gates, recurring invoices,
+  webhooks for Zapier/Make, invoice email delivery, signature canvas,
+  PWA install prompt, i18n on nav + dashboard
+- Integration scaffolds (env-gated NOOP): OCR, Whisper, WhatsApp Cloud API,
+  Twilio SMS, VAPID push, Resend email, billing checkout, Sentry, PostHog
+- Legal docs: /privacy + /terms. Onboarding wizard + demo seed. Landing
+  page with pricing.
+- 15 passing unit tests + GitHub Actions CI pipeline
+- Every commit a green build
+
 
 
 

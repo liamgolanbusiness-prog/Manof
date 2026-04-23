@@ -6,6 +6,18 @@ Each item is sized as **S** (<1 day), **M** (1–3 days), **L** (1+ weeks).
 
 ---
 
+## ✅ Shipped (night 2.3 — cycles 56–65)
+
+- **Teams** — project_collaborators with owner/admin/editor/viewer roles,
+  RLS helpers, invite-by-email with auto-accept trigger, settings UI (C56-57)
+- Plan gate enforcement on project + invoice creation (C58)
+- Email invoice to client via Resend (C59)
+- Signature canvas on quote + change approval (C60)
+- Recurring invoice templates + cron issuer (C61)
+- Outbound webhooks with HMAC signing for Zapier/Make/n8n (C62)
+- i18n sweep on nav + dashboard (C63)
+- PWA install prompt — Android native + iOS manual instructions (C64)
+
 ## ✅ Shipped (night 2.2 — cycles 46–55)
 
 - Receipt OCR wired into ExpenseDialog with auto-fill (C46)
