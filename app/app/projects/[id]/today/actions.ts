@@ -74,6 +74,29 @@ export async function saveReportBasics(
   return { ok: true };
 }
 
+export async function appendReportNotes(
+  projectId: string,
+  reportId: string,
+  textToAppend: string
+) {
+  const { supabase } = await assertProjectAccess(projectId);
+  const { data: row } = await supabase
+    .from("daily_reports")
+    .select("notes")
+    .eq("id", reportId)
+    .eq("project_id", projectId)
+    .maybeSingle();
+  const existing = row?.notes?.trim() ?? "";
+  const joined = existing ? `${existing}\n\n${textToAppend}` : textToAppend;
+  const { error } = await supabase
+    .from("daily_reports")
+    .update({ notes: joined, updated_at: new Date().toISOString() })
+    .eq("id", reportId)
+    .eq("project_id", projectId);
+  if (error) throw new Error(error.message);
+  revalidatePath(`/app/projects/${projectId}/today`);
+}
+
 export async function setReportLocked(
   projectId: string,
   reportId: string,
