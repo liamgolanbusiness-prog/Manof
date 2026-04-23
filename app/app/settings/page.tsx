@@ -37,6 +37,23 @@ export default async function SettingsPage() {
 
       <Card>
         <CardHeader>
+          <CardTitle className="text-base">יומן שינויים</CardTitle>
+          <CardDescription>
+            כל פעולה על חשבוניות, תשלומים, הוצאות ושינויי חוזה נשמרת אוטומטית.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <a
+            href="/app/settings/audit"
+            className="text-primary font-medium hover:underline text-sm"
+          >
+            הצג יומן →
+          </a>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
           <CardTitle className="text-base flex items-center gap-2">
             <ShieldAlert className="h-4 w-4 text-destructive" />
             הנתונים שלי

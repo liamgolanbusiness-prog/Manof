@@ -522,6 +522,32 @@ export interface Database {
         };
         Relationships: [];
       };
+      audit_log: {
+        Row: {
+          id: string;
+          user_id: string;
+          table_name: string;
+          row_id: string | null;
+          action: string;
+          old_data: Json | null;
+          new_data: Json | null;
+          actor_id: string | null;
+          created_at: Timestamp | null;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          table_name: string;
+          row_id?: string | null;
+          action: string;
+          old_data?: Json | null;
+          new_data?: Json | null;
+          actor_id?: string | null;
+          created_at?: Timestamp | null;
+        };
+        Update: Partial<Database["public"]["Tables"]["audit_log"]["Insert"]> & { id?: string };
+        Relationships: [];
+      };
       materials_catalog: {
         Row: {
           id: string;
