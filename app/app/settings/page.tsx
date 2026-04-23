@@ -2,6 +2,7 @@ import { requireUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { BusinessForm } from "./business-form";
 import { DangerZone } from "./danger-zone";
+import { PushToggle } from "@/components/push-toggle";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Building2, ShieldAlert } from "lucide-react";
 
@@ -32,6 +33,18 @@ export default async function SettingsPage() {
         </CardHeader>
         <CardContent>
           <BusinessForm profile={profile ?? { id: user.id }} email={user.email ?? ""} />
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">התראות</CardTitle>
+          <CardDescription>
+            קבל התראה בדפדפן על אירועים חשובים — משימה להיום, לקוח שצפה בפורטל, חשבונית שלא שולמה.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <PushToggle />
         </CardContent>
       </Card>
 

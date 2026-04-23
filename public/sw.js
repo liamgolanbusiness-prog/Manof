@@ -8,7 +8,7 @@
 //   storage.googleapis    → stale-while-revalidate (Supabase Storage photos)
 //   everything else       → network-first
 
-const SW_VERSION = "v2026-04-20-1";
+const SW_VERSION = "v2026-04-23-1";
 const STATIC_CACHE = `atar-static-${SW_VERSION}`;
 const PAGES_CACHE = `atar-pages-${SW_VERSION}`;
 const MEDIA_CACHE = `atar-media-${SW_VERSION}`;
@@ -126,3 +126,39 @@ async function staleWhileRevalidate(request, cacheName) {
     .catch(() => cached);
   return cached || networkFetch;
 }
+
+// ---------- Push notifications ----------
+
+self.addEventListener("push", (event) => {
+  let payload = { title: "אתר", body: "עדכון חדש" };
+  try {
+    if (event.data) payload = { ...payload, ...event.data.json() };
+  } catch {
+    // no-op: body was not JSON, use defaults
+  }
+  event.waitUntil(
+    self.registration.showNotification(payload.title, {
+      body: payload.body,
+      icon: "/icons/icon-192.svg",
+      badge: "/favicon.svg",
+      tag: payload.tag,
+      data: { url: payload.url || "/app" },
+      dir: "rtl",
+      lang: "he",
+    })
+  );
+});
+
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  const url = event.notification.data?.url || "/app";
+  event.waitUntil(
+    (async () => {
+      const all = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
+      for (const c of all) {
+        if (c.url.includes(url) && "focus" in c) return c.focus();
+      }
+      if (self.clients.openWindow) return self.clients.openWindow(url);
+    })()
+  );
+});
