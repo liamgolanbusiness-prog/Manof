@@ -3,12 +3,14 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { CalendarDays, BookOpen, Wallet, Users, ListTodo, Share2 } from "lucide-react";
+import { CalendarDays, BookOpen, Wallet, Users, ListTodo, Share2, FileText, Package } from "lucide-react";
 
 const TABS = [
   { key: "today", label: "היום", icon: CalendarDays },
   { key: "diary", label: "יומן", icon: BookOpen },
   { key: "money", label: "כסף", icon: Wallet },
+  { key: "invoices", label: "חשבוניות", icon: FileText },
+  { key: "materials", label: "חומרים", icon: Package },
   { key: "people", label: "אנשים", icon: Users },
   { key: "tasks", label: "משימות", icon: ListTodo },
   { key: "client", label: "לקוח", icon: Share2 },

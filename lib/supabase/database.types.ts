@@ -522,6 +522,106 @@ export interface Database {
         };
         Relationships: [];
       };
+      invoices: {
+        Row: {
+          id: string;
+          user_id: string;
+          project_id: string | null;
+          type: string;
+          doc_number: string;
+          number_int: number;
+          status: string;
+          client_contact_id: string | null;
+          client_name: string | null;
+          client_tax_id: string | null;
+          client_address: string | null;
+          client_email: string | null;
+          client_phone: string | null;
+          issue_date: ISODate;
+          due_date: ISODate | null;
+          valid_until: ISODate | null;
+          subtotal: number;
+          vat_rate: number;
+          vat_amount: number;
+          discount_amount: number;
+          total: number;
+          amount_paid: number;
+          payment_method: string | null;
+          payment_reference: string | null;
+          notes: string | null;
+          footer: string | null;
+          pdf_url: string | null;
+          accepted_at: Timestamp | null;
+          accepted_by_name: string | null;
+          cancelled_at: Timestamp | null;
+          cancelled_reason: string | null;
+          created_at: Timestamp | null;
+          updated_at: Timestamp | null;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          project_id?: string | null;
+          type: string;
+          doc_number: string;
+          number_int: number;
+          status?: string;
+          client_contact_id?: string | null;
+          client_name?: string | null;
+          client_tax_id?: string | null;
+          client_address?: string | null;
+          client_email?: string | null;
+          client_phone?: string | null;
+          issue_date?: ISODate;
+          due_date?: ISODate | null;
+          valid_until?: ISODate | null;
+          subtotal?: number;
+          vat_rate?: number;
+          vat_amount?: number;
+          discount_amount?: number;
+          total?: number;
+          amount_paid?: number;
+          payment_method?: string | null;
+          payment_reference?: string | null;
+          notes?: string | null;
+          footer?: string | null;
+          pdf_url?: string | null;
+          accepted_at?: Timestamp | null;
+          accepted_by_name?: string | null;
+          cancelled_at?: Timestamp | null;
+          cancelled_reason?: string | null;
+          created_at?: Timestamp | null;
+          updated_at?: Timestamp | null;
+        };
+        Update: Partial<Database["public"]["Tables"]["invoices"]["Insert"]> & { id?: string };
+        Relationships: [];
+      };
+      invoice_items: {
+        Row: {
+          id: string;
+          invoice_id: string;
+          sort_order: number;
+          description: string;
+          quantity: number;
+          unit_price: number;
+          unit: string | null;
+          line_total: number;
+          created_at: Timestamp | null;
+        };
+        Insert: {
+          id?: string;
+          invoice_id: string;
+          sort_order?: number;
+          description: string;
+          quantity?: number;
+          unit_price?: number;
+          unit?: string | null;
+          line_total?: number;
+          created_at?: Timestamp | null;
+        };
+        Update: Partial<Database["public"]["Tables"]["invoice_items"]["Insert"]> & { id?: string };
+        Relationships: [];
+      };
       tasks: {
         Row: {
           id: string;
@@ -611,6 +711,40 @@ export type IssueStatus = (typeof ISSUE_STATUSES)[number];
 
 export const TASK_STATUSES = ["open", "done"] as const;
 export type TaskStatus = (typeof TASK_STATUSES)[number];
+
+export type Invoice = Database["public"]["Tables"]["invoices"]["Row"];
+export type InvoiceInsert = Database["public"]["Tables"]["invoices"]["Insert"];
+export type InvoiceItem = Database["public"]["Tables"]["invoice_items"]["Row"];
+export type InvoiceItemInsert = Database["public"]["Tables"]["invoice_items"]["Insert"];
+
+export const INVOICE_TYPES = ["quote", "tax_invoice", "receipt", "tax_receipt"] as const;
+export type InvoiceType = (typeof INVOICE_TYPES)[number];
+
+export const INVOICE_TYPE_LABELS: Record<InvoiceType, string> = {
+  quote: "הצעת מחיר",
+  tax_invoice: "חשבונית מס",
+  receipt: "קבלה",
+  tax_receipt: "חשבונית מס-קבלה",
+};
+
+export const INVOICE_STATUSES = [
+  "draft",
+  "issued",
+  "accepted",
+  "paid",
+  "cancelled",
+  "expired",
+] as const;
+export type InvoiceStatus = (typeof INVOICE_STATUSES)[number];
+
+export const INVOICE_STATUS_LABELS: Record<InvoiceStatus, string> = {
+  draft: "טיוטה",
+  issued: "הונפק",
+  accepted: "התקבל",
+  paid: "שולם",
+  cancelled: "בוטל",
+  expired: "פג תוקף",
+};
 
 export const TAX_ID_TYPES = ["osek_patur", "osek_morshe", "company", "individual"] as const;
 export type TaxIdType = (typeof TAX_ID_TYPES)[number];
