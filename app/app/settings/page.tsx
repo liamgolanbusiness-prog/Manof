@@ -1,8 +1,9 @@
 import { requireUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { BusinessForm } from "./business-form";
+import { DangerZone } from "./danger-zone";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Building2 } from "lucide-react";
+import { Building2, ShieldAlert } from "lucide-react";
 
 export const metadata = { title: "הגדרות עסק · אתר" };
 
@@ -31,6 +32,21 @@ export default async function SettingsPage() {
         </CardHeader>
         <CardContent>
           <BusinessForm profile={profile ?? { id: user.id }} email={user.email ?? ""} />
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            <ShieldAlert className="h-4 w-4 text-destructive" />
+            הנתונים שלי
+          </CardTitle>
+          <CardDescription>
+            ייצוא מלא של כל המידע שלך או מחיקה לצמיתות של החשבון.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <DangerZone email={user.email ?? ""} />
         </CardContent>
       </Card>
     </div>

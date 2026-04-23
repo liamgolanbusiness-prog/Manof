@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { requireUser } from "@/lib/auth";
 import { normalizeIsraeliPhone, isValidIsraeliPhone } from "@/lib/phone";
@@ -130,6 +131,38 @@ export async function removeLogoAction(): Promise<{ ok: boolean }> {
   revalidatePath("/app/settings");
   revalidatePath("/app/settings");
   return { ok: true };
+}
+
+export async function deleteAccountAction() {
+  const user = await requireUser();
+  const supabase = createClient();
+
+  // Delete via RLS — all user-scoped rows cascade via ON DELETE CASCADE on
+  // user_id FKs. project_members / attendance / report_photos / invoice_items
+  // cascade through their parent rows.
+  //
+  // Then we delete the auth user via the admin API. Once that's done, the
+  // client's session cookie is invalid and middleware bounces to /login.
+  await supabase.from("profiles").delete().eq("id", user.id);
+  // projects (and everything under them) cascades on user_id delete, triggered
+  // by deleting the auth user. We also explicitly delete projects to force
+  // cascade even if the auth-admin step fails.
+  await supabase.from("projects").delete().eq("user_id", user.id);
+  await supabase.from("contacts").delete().eq("user_id", user.id);
+  await supabase.from("invoices").delete().eq("user_id", user.id);
+  await supabase.from("change_orders").delete().eq("user_id", user.id);
+  await supabase.from("materials").delete().eq("user_id", user.id);
+  await supabase.from("materials_catalog").delete().eq("user_id", user.id);
+
+  // Use admin client to delete the auth user.
+  const { createAdminClient } = await import("@/lib/supabase/server");
+  const admin = createAdminClient();
+  await admin.auth.admin.deleteUser(user.id);
+
+  // Force a logout cookie clear.
+  await supabase.auth.signOut();
+  revalidatePath("/", "layout");
+  redirect("/?deleted=1");
 }
 
 export async function markOnboardingComplete() {
