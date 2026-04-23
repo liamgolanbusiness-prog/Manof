@@ -6,6 +6,18 @@ Each item is sized as **S** (<1 day), **M** (1–3 days), **L** (1+ weeks).
 
 ---
 
+## ✅ Shipped (night 2.2 — cycles 46–55)
+
+- Receipt OCR wired into ExpenseDialog with auto-fill (C46)
+- Voice-note auto-transcription → daily report notes (C47)
+- Push triggers: cron daily for tasks/overdue invoices + portal first-view (C48)
+- WhatsApp summary sent to client on day close (C49)
+- Weather auto-fetch on report creation via open-meteo (keyless) (C50)
+- Transactional email (Resend) + welcome email on signup (C51)
+- Subscription billing scaffold + /app/billing page + plan-gate helpers (C52)
+- 2FA (TOTP) enroll/verify/unenroll + sign-out-all-devices (C53)
+- i18n scaffold: Hebrew + Arabic + English dictionaries + LocaleSwitcher (C54)
+
 ## ✅ Shipped (night 2.1 — cycles 36–45)
 
 - Dashboard KPIs: revenue MoM + 12-week cashflow chart + expense-cat bars (C36)

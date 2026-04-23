@@ -652,6 +652,67 @@ every commit a green build.
 - TWILIO_ACCOUNT_SID + TWILIO_AUTH_TOKEN + TWILIO_FROM_NUMBER — SMS
 - VAPID_PUBLIC_KEY + VAPID_PRIVATE_KEY + VAPID_SUBJECT + NEXT_PUBLIC_VAPID_PUBLIC_KEY — push
 
+---
+
+# Night 2.2 — 2026-04-23 — Cycles 46-55 (wire scaffolds + growth features)
+
+## Cycle 46 — Receipt OCR wired into ExpenseDialog
+Upload + OCR in parallel. Auto-fills amount, expense_date, category
+(Hebrew→key map), supplier_contact_id (fuzzy name match). 503 → silent
+manual fallback.
+
+## Cycle 47 — Voice auto-transcription
+autoTranscribe(url) → POST /api/ai/transcribe → Whisper → appendReportNotes
+merges Hebrew transcript into day's notes. 'מתמלל...' indicator.
+
+## Cycle 48 — Push triggers
+lib/push-send.ts notifyUser fans out + cleans 404/410 subs. /api/cron/daily
+(Bearer CRON_SECRET) groups tasks-due-today + overdue invoices per user.
+vercel.json schedules 07:00. Portal first-view-of-day pushes owner.
+
+## Cycle 49 — WhatsApp summary on day close
+sendDailySummaryToClient composes Hebrew day digest + portal link.
+Close-day prompts 'שלח סיכום?' → direct WhatsApp send or wa.me fallback.
+
+## Cycle 50 — Weather auto-fetch (open-meteo, free)
+lib/weather.ts geocodes project.address (Hebrew, IL) → current temp +
+WMO code → 'בהיר, 24°'. Wired into ensureTodayReport. No env key needed.
+
+## Cycle 51 — Transactional email (Resend)
+lib/email.ts sendEmail + Hebrew RTL templates (welcome, invoice ready,
+portal viewed). Welcome email fires after signup. Provider-swap is
+one file.
+
+## Cycle 52 — Subscription billing scaffold
+0011 migration: plan/subscription_status/trial_ends_at. lib/plan-gate.ts
+with checkProjectLimit + checkInvoiceLimit (free: 1 project + 3
+invoices/month). /app/billing page with trial badge + usage bars +
+upgrade CTA. Enforcement deferred.
+
+## Cycle 53 — 2FA + session management
+/app/settings/security. MfaManager uses Supabase MFA enroll/challenge/
+verify/unenroll with QR + 6-digit code. SignOutAllButton runs
+signOut({scope:'global'}).
+
+## Cycle 54 — i18n scaffold (he/ar/en)
+0012 migration adds profiles.locale. lib/i18n.ts typed t() with Hebrew
+master + Arabic + English overrides on ~30 high-traffic strings.
+LocaleSwitcher in settings. He + Ar both RTL so no layout change.
+
+## Cycle 55 — Wrap
+Split lib/i18n.ts + lib/i18n-server.ts so client components don't pull
+next/headers. Build/lint/test/typecheck all green.
+
+## Cumulative state at end of night 2.2
+- 36 cycles across 2 nights
+- 12 migrations (0001–0012)
+- ~60 new files since cycle 19
+- Integration scaffolds (env-gated NOOP): OCR, Whisper, WhatsApp, SMS,
+  push, email, billing checkout
+- Landing page + pricing + privacy + terms + onboarding wizard + demo seed
+- 15 passing unit tests + GitHub Actions CI pipeline
+- Every commit a green build
+
 
 
 
