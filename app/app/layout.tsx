@@ -5,6 +5,8 @@ import { logoutAction } from "@/app/(auth)/login/actions";
 import { Button } from "@/components/ui/button";
 import { HardHat, LogOut, Plus, Search, Settings as SettingsIcon, User } from "lucide-react";
 import { OfflineBanner } from "@/components/offline-banner";
+import { getUserLocale } from "@/lib/i18n-server";
+import { t } from "@/lib/i18n";
 
 export default async function AppLayout({
   children,
@@ -13,11 +15,14 @@ export default async function AppLayout({
 }) {
   const user = await requireUser();
   const supabase = createClient();
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("full_name, business_name")
-    .eq("id", user.id)
-    .maybeSingle();
+  const [{ data: profile }, locale] = await Promise.all([
+    supabase
+      .from("profiles")
+      .select("full_name, business_name")
+      .eq("id", user.id)
+      .maybeSingle(),
+    getUserLocale(),
+  ]);
 
   const displayName = profile?.full_name || profile?.business_name || user.email;
 
@@ -30,7 +35,7 @@ export default async function AppLayout({
             <span className="hidden sm:inline">אתר</span>
           </Link>
           <nav className="flex items-center gap-1">
-            <Link href="/app/search" aria-label="חיפוש">
+            <Link href="/app/search" aria-label={t(locale, "nav_search")}>
               <Button size="sm" variant="ghost" className="gap-1">
                 <Search className="h-4 w-4" />
               </Button>
@@ -38,16 +43,16 @@ export default async function AppLayout({
             <Link href="/app/projects/new">
               <Button size="sm" variant="ghost" className="gap-1">
                 <Plus className="h-4 w-4" />
-                <span className="hidden sm:inline">פרויקט חדש</span>
+                <span className="hidden sm:inline">{t(locale, "nav_new_project")}</span>
               </Button>
             </Link>
             <Link href="/app/contacts">
               <Button size="sm" variant="ghost" className="gap-1">
                 <User className="h-4 w-4" />
-                <span className="hidden sm:inline">אנשי קשר</span>
+                <span className="hidden sm:inline">{t(locale, "nav_contacts")}</span>
               </Button>
             </Link>
-            <Link href="/app/settings" aria-label="הגדרות">
+            <Link href="/app/settings" aria-label={t(locale, "nav_settings")}>
               <Button size="sm" variant="ghost" className="gap-1">
                 <SettingsIcon className="h-4 w-4" />
               </Button>
@@ -58,7 +63,7 @@ export default async function AppLayout({
                 variant="ghost"
                 type="submit"
                 className="gap-1 text-muted-foreground"
-                aria-label="התנתקות"
+                aria-label={t(locale, "nav_logout")}
               >
                 <LogOut className="h-4 w-4" />
               </Button>

@@ -2,6 +2,8 @@ import Link from "next/link";
 import { requireUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { formatCurrency, isoDate } from "@/lib/format";
+import { getUserLocale } from "@/lib/i18n-server";
+import { t } from "@/lib/i18n";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
@@ -21,6 +23,7 @@ import {
 export default async function DashboardPage() {
   const user = await requireUser();
   const supabase = createClient();
+  const locale = await getUserLocale();
 
   const { data: projects } = await supabase
     .from("projects")
@@ -188,7 +191,7 @@ export default async function DashboardPage() {
   return (
     <div className="container py-5 space-y-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">בוקר טוב</h1>
+        <h1 className="text-2xl font-bold">{t(locale, "dashboard_good_morning")}</h1>
         <Link href="/app/projects/new">
           <Button size="sm" className="tap gap-1">
             <Plus className="h-4 w-4" />
