@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 export async function GET(request: NextRequest) {
   const url = new URL(request.url);
   const code = url.searchParams.get("code");
-  const next = url.searchParams.get("next") ?? "/app/projects/new";
+  const next = url.searchParams.get("next") ?? "/app/welcome";
 
   if (code) {
     const supabase = createClient();

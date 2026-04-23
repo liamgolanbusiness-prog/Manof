@@ -98,7 +98,7 @@ export async function signupAction(
   }
 
   revalidatePath("/", "layout");
-  redirect("/app/projects/new");
+  redirect("/app/welcome");
 }
 
 export async function logoutAction() {
