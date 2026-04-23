@@ -4,7 +4,9 @@ import { BusinessForm } from "./business-form";
 import { DangerZone } from "./danger-zone";
 import { PushToggle } from "@/components/push-toggle";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Building2, ShieldAlert } from "lucide-react";
+import { Building2, Crown, ShieldAlert } from "lucide-react";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
 
 export const metadata = { title: "הגדרות עסק · אתר" };
 
@@ -33,6 +35,22 @@ export default async function SettingsPage() {
         </CardHeader>
         <CardContent>
           <BusinessForm profile={profile ?? { id: user.id }} email={user.email ?? ""} />
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            <Crown className="h-4 w-4 text-primary" />
+            חשבון ומנוי
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Link href="/app/billing">
+            <Button variant="outline" size="sm">
+              נהל מנוי
+            </Button>
+          </Link>
         </CardContent>
       </Card>
 

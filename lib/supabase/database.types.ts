@@ -40,6 +40,10 @@ export interface Database {
           bit_phone: string | null;
           invoice_footer: string | null;
           onboarding_completed_at: Timestamp | null;
+          plan: string | null;
+          subscription_status: string | null;
+          subscription_ends_at: Timestamp | null;
+          trial_ends_at: Timestamp | null;
           created_at: Timestamp | null;
         };
         Insert: {
@@ -66,6 +70,10 @@ export interface Database {
           bit_phone?: string | null;
           invoice_footer?: string | null;
           onboarding_completed_at?: Timestamp | null;
+          plan?: string | null;
+          subscription_status?: string | null;
+          subscription_ends_at?: Timestamp | null;
+          trial_ends_at?: Timestamp | null;
           created_at?: Timestamp | null;
         };
         Update: {
@@ -92,6 +100,10 @@ export interface Database {
           bit_phone?: string | null;
           invoice_footer?: string | null;
           onboarding_completed_at?: Timestamp | null;
+          plan?: string | null;
+          subscription_status?: string | null;
+          subscription_ends_at?: Timestamp | null;
+          trial_ends_at?: Timestamp | null;
           created_at?: Timestamp | null;
         };
         Relationships: [];
