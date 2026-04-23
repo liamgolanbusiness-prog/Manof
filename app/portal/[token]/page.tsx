@@ -22,6 +22,7 @@ import {
 import { INVOICE_TYPE_LABELS, type InvoiceType } from "@/lib/supabase/database.types";
 import { acceptQuoteAction } from "./accept-quote/actions";
 import { approveChangeAction } from "./approve-change/actions";
+import { SignaturePad } from "./signature-pad";
 
 export const dynamic = "force-dynamic";
 
@@ -358,18 +359,10 @@ export default async function PortalPage({
                     <summary className="cursor-pointer text-primary text-sm">
                       לחץ לאישור השינוי
                     </summary>
-                    <form action={approveChangeAction} className="mt-3 space-y-2 rounded-xl bg-muted/50 p-3">
+                    <form action={approveChangeAction} className="mt-3 space-y-3 rounded-xl bg-muted/50 p-3">
                       <input type="hidden" name="token" value={params.token} />
                       <input type="hidden" name="change_id" value={c.id} />
-                      <label className="text-xs text-muted-foreground">
-                        הקלד את שמך לאישור:
-                      </label>
-                      <input
-                        name="typed_name"
-                        required
-                        className="w-full rounded-xl border bg-background px-3 py-2 text-sm"
-                        placeholder="שם מלא"
-                      />
+                      <SignaturePad name="typed_name" signatureFieldName="signature_data_url" />
                       <button
                         type="submit"
                         className="w-full rounded-xl bg-primary text-primary-foreground font-semibold h-11"
@@ -462,19 +455,11 @@ export default async function PortalPage({
                     </summary>
                     <form
                       action={acceptQuoteAction}
-                      className="mt-3 space-y-2 rounded-xl bg-muted/50 p-3"
+                      className="mt-3 space-y-3 rounded-xl bg-muted/50 p-3"
                     >
                       <input type="hidden" name="token" value={params.token} />
                       <input type="hidden" name="quote_id" value={q.id} />
-                      <label className="text-xs text-muted-foreground">
-                        הקלד את שמך לאישור:
-                      </label>
-                      <input
-                        name="typed_name"
-                        required
-                        className="w-full rounded-xl border bg-background px-3 py-2 text-sm"
-                        placeholder="שם מלא"
-                      />
+                      <SignaturePad name="typed_name" signatureFieldName="signature_data_url" />
                       <button
                         type="submit"
                         className="w-full rounded-xl bg-primary text-primary-foreground font-semibold h-11"

@@ -689,6 +689,7 @@ export interface Database {
           amount_change: number;
           status: string;
           signed_by_name: string | null;
+          signed_signature_url: string | null;
           signed_at: Timestamp | null;
           rejected_at: Timestamp | null;
           rejected_reason: string | null;
@@ -704,6 +705,7 @@ export interface Database {
           amount_change?: number;
           status?: string;
           signed_by_name?: string | null;
+          signed_signature_url?: string | null;
           signed_at?: Timestamp | null;
           rejected_at?: Timestamp | null;
           rejected_reason?: string | null;
@@ -744,6 +746,7 @@ export interface Database {
           pdf_url: string | null;
           accepted_at: Timestamp | null;
           accepted_by_name: string | null;
+          accepted_signature_url: string | null;
           cancelled_at: Timestamp | null;
           cancelled_reason: string | null;
           created_at: Timestamp | null;
@@ -779,6 +782,7 @@ export interface Database {
           pdf_url?: string | null;
           accepted_at?: Timestamp | null;
           accepted_by_name?: string | null;
+          accepted_signature_url?: string | null;
           cancelled_at?: Timestamp | null;
           cancelled_reason?: string | null;
           created_at?: Timestamp | null;

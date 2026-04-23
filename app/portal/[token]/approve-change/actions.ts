@@ -45,12 +45,19 @@ export async function approveChangeAction(formData: FormData) {
     redirect(`/portal/${token}`);
   }
 
+  const signatureRaw = String(formData.get("signature_data_url") ?? "").trim();
+  const signature =
+    signatureRaw.startsWith("data:image/") && signatureRaw.length < 200_000
+      ? signatureRaw
+      : null;
+
   await ctx.supabase
     .from("change_orders")
     .update({
       status: "approved",
       signed_by_name: typedName.slice(0, 120),
       signed_at: new Date().toISOString(),
+      signed_signature_url: signature,
     })
     .eq("id", changeId);
 

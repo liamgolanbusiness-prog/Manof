@@ -189,3 +189,11 @@ drop trigger if exists on_auth_user_created_accept_invites on auth.users;
 create trigger on_auth_user_created_accept_invites
   after insert on auth.users
   for each row execute function public.accept_pending_invites_for_new_user();
+
+-- Add signature image column to quote / change acceptance rows. Data-URL
+-- PNG from the client's signature pad; nullable so typed-name-only flows
+-- still work.
+alter table public.invoices
+  add column if not exists accepted_signature_url text;
+alter table public.change_orders
+  add column if not exists signed_signature_url text;

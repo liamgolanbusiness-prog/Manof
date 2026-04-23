@@ -44,12 +44,19 @@ export async function acceptQuoteAction(formData: FormData) {
     redirect(`/portal/${token}`);
   }
 
+  const signatureRaw = String(formData.get("signature_data_url") ?? "").trim();
+  const signature =
+    signatureRaw.startsWith("data:image/") && signatureRaw.length < 200_000
+      ? signatureRaw
+      : null;
+
   await supabase
     .from("invoices")
     .update({
       status: "accepted",
       accepted_at: new Date().toISOString(),
       accepted_by_name: typedName.slice(0, 120),
+      accepted_signature_url: signature,
     })
     .eq("id", quoteId);
 
