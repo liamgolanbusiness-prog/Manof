@@ -4,7 +4,7 @@ import { BusinessForm } from "./business-form";
 import { DangerZone } from "./danger-zone";
 import { PushToggle } from "@/components/push-toggle";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Building2, Crown, ShieldAlert } from "lucide-react";
+import { Building2, Crown, ShieldAlert, ShieldCheck } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 
@@ -49,6 +49,25 @@ export default async function SettingsPage() {
           <Link href="/app/billing">
             <Button variant="outline" size="sm">
               נהל מנוי
+            </Button>
+          </Link>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            <ShieldCheck className="h-4 w-4 text-primary" />
+            אבטחה
+          </CardTitle>
+          <CardDescription>
+            אימות דו-שלבי, ניהול התחברויות פעילות.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Link href="/app/settings/security">
+            <Button variant="outline" size="sm">
+              הגדרות אבטחה
             </Button>
           </Link>
         </CardContent>
