@@ -198,7 +198,7 @@ export default async function PortalPage({
             <div className="relative h-8 w-8 rounded-lg overflow-hidden">
               <Image
                 src={profile.logo_url}
-                alt=""
+                alt={profile.business_name ?? "לוגו"}
                 fill
                 sizes="32px"
                 className="object-contain"

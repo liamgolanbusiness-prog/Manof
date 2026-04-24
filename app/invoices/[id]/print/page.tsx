@@ -66,7 +66,7 @@ export default async function InvoicePrintPage({ params }: { params: { id: strin
           <div className="flex-1 space-y-0.5">
             {profile?.logo_url ? (
               <div className="relative h-14 w-14 mb-2">
-                <Image src={profile.logo_url} alt="" fill sizes="56px" className="object-contain" />
+                <Image src={profile.logo_url} alt={profile.business_name ?? "לוגו"} fill sizes="56px" className="object-contain" />
               </div>
             ) : null}
             <div className="text-xl font-bold">{profile?.business_name || profile?.full_name || "עסק"}</div>
