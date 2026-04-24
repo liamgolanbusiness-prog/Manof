@@ -35,15 +35,13 @@ const PAYMENT_METHODS = [
   { value: "check", label: "צ׳ק" },
 ];
 
-type Contact = { id: string; name: string; role: string; trade: string | null };
-
 export function PaymentDialog({
   projectId,
-  contacts,
+  clientName,
   trigger,
 }: {
   projectId: string;
-  contacts: Contact[];
+  clientName?: string | null;
   trigger: React.ReactNode;
 }) {
   const [open, setOpen] = useState(false);
@@ -53,7 +51,6 @@ export function PaymentDialog({
   const { toast } = useToast();
 
   const [amount, setAmount] = useState("");
-  const [counterpartyId, setCounterpartyId] = useState("");
   const [method, setMethod] = useState<string>("bit");
   const [paymentDate, setPaymentDate] = useState(isoDate());
   const [invoice, setInvoice] = useState("");
@@ -61,7 +58,6 @@ export function PaymentDialog({
 
   function reset() {
     setAmount("");
-    setCounterpartyId("");
     setMethod("bit");
     setPaymentDate(isoDate());
     setInvoice("");
@@ -77,7 +73,7 @@ export function PaymentDialog({
           projectId,
           direction: "in",
           amount,
-          counterparty_contact_id: counterpartyId || null,
+          counterparty_contact_id: null,
           method: method || null,
           payment_date: paymentDate,
           invoice_number: invoice.trim() || null,
@@ -93,8 +89,6 @@ export function PaymentDialog({
     });
   }
 
-  const clientOptions = contacts.filter((c) => c.role === "client");
-
   return (
     <Dialog
       open={open}
@@ -107,7 +101,11 @@ export function PaymentDialog({
       <DialogContent>
         <DialogHeader>
           <DialogTitle>תקבול חדש</DialogTitle>
-          <DialogDescription>כסף שהתקבל מהלקוח.</DialogDescription>
+          <DialogDescription>
+            {clientName
+              ? `כסף שהתקבל מ-${clientName}.`
+              : "כסף שהתקבל מהלקוח של הפרויקט."}
+          </DialogDescription>
         </DialogHeader>
         <div className="space-y-3">
           <div className="space-y-1.5">
@@ -119,28 +117,6 @@ export function PaymentDialog({
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
             />
-          </div>
-          <div className="space-y-1.5">
-            <Label>לקוח</Label>
-            <Select value={counterpartyId} onValueChange={setCounterpartyId}>
-              <SelectTrigger>
-                <SelectValue placeholder="בחר לקוח" />
-              </SelectTrigger>
-              <SelectContent>
-                {clientOptions.length === 0 ? (
-                  <SelectItem value="none" disabled>
-                    אין לקוחות — הוסף איש קשר עם תפקיד "לקוח"
-                  </SelectItem>
-                ) : (
-                  clientOptions.map((c) => (
-                    <SelectItem key={c.id} value={c.id}>
-                      {c.name}
-                      {c.trade ? ` · ${c.trade}` : ""}
-                    </SelectItem>
-                  ))
-                )}
-              </SelectContent>
-            </Select>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">

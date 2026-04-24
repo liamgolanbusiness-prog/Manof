@@ -68,6 +68,7 @@ export function MoneyTabs({
   receipts,
   legacyOut,
   contacts,
+  clientName,
   outstandingLabor,
   settledLabor,
 }: {
@@ -76,6 +77,7 @@ export function MoneyTabs({
   receipts: Payment[];
   legacyOut: Payment[];
   contacts: Contact[];
+  clientName?: string | null;
   outstandingLabor: OutstandingLabor[];
   settledLabor: SettledLabor[];
 }) {
@@ -122,7 +124,7 @@ export function MoneyTabs({
           ) : (
             <PaymentDialog
               projectId={projectId}
-              contacts={contacts}
+              clientName={clientName}
               trigger={
                 <Button size="sm" className="tap gap-1">
                   <Plus className="h-4 w-4" />

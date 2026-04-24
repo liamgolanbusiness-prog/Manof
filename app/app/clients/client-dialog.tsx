@@ -15,38 +15,28 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Loader2, Trash2, AlertCircle } from "lucide-react";
-import { upsertContact, deleteContact, type ContactFormState } from "./actions";
+import { upsertClient, deleteClient, type ClientFormState } from "./actions";
 import { useToast } from "@/components/ui/use-toast";
 
 type Existing = {
   id: string;
   name: string;
   phone: string | null;
-  role: string;
-  trade: string | null;
-  pay_rate: number | null;
-  pay_type: string | null;
+  email: string | null;
+  tax_id: string | null;
+  billing_address: string | null;
   notes: string | null;
 };
 
-export function ContactDialog({
+export function ClientDialog({
   trigger,
   existing,
   onCreated,
-  defaultRole,
 }: {
   trigger: React.ReactNode;
   existing?: Existing;
   onCreated?: (id: string, name: string) => void;
-  defaultRole?: string;
 }) {
   const [open, setOpen] = useState(false);
   const [saving, startSaving] = useTransition();
@@ -56,12 +46,9 @@ export function ContactDialog({
 
   const [name, setName] = useState(existing?.name ?? "");
   const [phone, setPhone] = useState(existing?.phone ?? "");
-  const [role, setRole] = useState(existing?.role ?? defaultRole ?? "worker");
-  const [trade, setTrade] = useState(existing?.trade ?? "");
-  const [payRate, setPayRate] = useState(
-    existing?.pay_rate != null ? String(existing.pay_rate) : ""
-  );
-  const [payType, setPayType] = useState(existing?.pay_type ?? "hourly");
+  const [email, setEmail] = useState(existing?.email ?? "");
+  const [taxId, setTaxId] = useState(existing?.tax_id ?? "");
+  const [billingAddress, setBillingAddress] = useState(existing?.billing_address ?? "");
   const [notes, setNotes] = useState(existing?.notes ?? "");
 
   function save() {
@@ -71,12 +58,11 @@ export function ContactDialog({
       if (existing?.id) fd.set("id", existing.id);
       fd.set("name", name);
       fd.set("phone", phone);
-      fd.set("role", role);
-      fd.set("trade", trade);
-      fd.set("pay_rate", payRate);
-      fd.set("pay_type", payType);
+      fd.set("email", email);
+      fd.set("tax_id", taxId);
+      fd.set("billing_address", billingAddress);
       fd.set("notes", notes);
-      const state: ContactFormState = await upsertContact(null, fd);
+      const state: ClientFormState = await upsertClient(null, fd);
       if (state?.error) {
         setError(state.error);
         return;
@@ -92,7 +78,7 @@ export function ContactDialog({
     if (!existing?.id) return;
     if (!confirm(`למחוק את ${existing.name}? פעולה לא ניתנת לשחזור.`)) return;
     try {
-      await deleteContact(existing.id);
+      await deleteClient(existing.id);
       toast({ title: "נמחק", variant: "success" });
       setOpen(false);
       router.refresh();
@@ -106,37 +92,21 @@ export function ContactDialog({
       <DialogTrigger asChild>{trigger}</DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{existing ? "עריכת איש קשר" : "איש קשר חדש"}</DialogTitle>
+          <DialogTitle>{existing ? "עריכת לקוח" : "לקוח חדש"}</DialogTitle>
           <DialogDescription>
-            {role === "supplier"
-              ? "ספק — חשבוניות ותשלומים ייקושרו אליו בהוצאות."
-              : "פרטי קשר לעובד, קבלן משנה או ספק. לקוחות מנוהלים בעמוד נפרד."}
+            פרטי לקוח משמשים לחשבוניות, פורטל לקוח וקישור לפרויקטים.
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-3">
           <div className="space-y-1.5">
-            <Label htmlFor="c-name">שם *</Label>
-            <Input id="c-name" value={name} onChange={(e) => setName(e.target.value)} required />
+            <Label htmlFor="cl-name">שם *</Label>
+            <Input id="cl-name" value={name} onChange={(e) => setName(e.target.value)} required />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <Label>תפקיד *</Label>
-              <Select value={role} onValueChange={setRole}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="worker">עובד</SelectItem>
-                  <SelectItem value="subcontractor">קבלן משנה</SelectItem>
-                  <SelectItem value="supplier">ספק</SelectItem>
-                  <SelectItem value="other">אחר</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="c-phone">טלפון</Label>
+              <Label htmlFor="cl-phone">טלפון</Label>
               <Input
-                id="c-phone"
+                id="cl-phone"
                 type="tel"
                 inputMode="tel"
                 dir="ltr"
@@ -145,47 +115,39 @@ export function ContactDialog({
                 onChange={(e) => setPhone(e.target.value)}
               />
             </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="cl-email">אימייל</Label>
+              <Input
+                id="cl-email"
+                type="email"
+                inputMode="email"
+                dir="ltr"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
+            </div>
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="c-trade">מקצוע / תחום</Label>
+            <Label htmlFor="cl-tax">ח.פ / ע.מ</Label>
             <Input
-              id="c-trade"
-              placeholder="חשמל, אינסטלציה, ריצוף..."
-              value={trade}
-              onChange={(e) => setTrade(e.target.value)}
+              id="cl-tax"
+              inputMode="numeric"
+              value={taxId}
+              onChange={(e) => setTaxId(e.target.value)}
             />
           </div>
-          {(role === "worker" || role === "subcontractor") ? (
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <Label htmlFor="c-rate">תעריף (₪)</Label>
-                <Input
-                  id="c-rate"
-                  type="text"
-                  inputMode="numeric"
-                  value={payRate}
-                  onChange={(e) => setPayRate(e.target.value)}
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label>סוג תשלום</Label>
-                <Select value={payType} onValueChange={setPayType}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="hourly">שעתי</SelectItem>
-                    <SelectItem value="daily">יומי</SelectItem>
-                    <SelectItem value="fixed">קבוע לפרויקט</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-          ) : null}
           <div className="space-y-1.5">
-            <Label htmlFor="c-notes">הערות</Label>
+            <Label htmlFor="cl-address">כתובת לחיוב</Label>
+            <Input
+              id="cl-address"
+              value={billingAddress}
+              onChange={(e) => setBillingAddress(e.target.value)}
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="cl-notes">הערות</Label>
             <Textarea
-              id="c-notes"
+              id="cl-notes"
               rows={2}
               value={notes}
               onChange={(e) => setNotes(e.target.value)}

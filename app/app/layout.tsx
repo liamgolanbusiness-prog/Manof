@@ -3,7 +3,15 @@ import { requireUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { logoutAction } from "@/app/(auth)/login/actions";
 import { Button } from "@/components/ui/button";
-import { HardHat, LogOut, Plus, Search, Settings as SettingsIcon, User } from "lucide-react";
+import {
+  HardHat,
+  LogOut,
+  Plus,
+  Search,
+  Settings as SettingsIcon,
+  User,
+  UsersRound,
+} from "lucide-react";
 import { OfflineBanner } from "@/components/offline-banner";
 import { InstallPrompt } from "@/components/install-prompt";
 import { getUserLocale } from "@/lib/i18n-server";
@@ -45,6 +53,12 @@ export default async function AppLayout({
               <Button size="sm" variant="ghost" className="gap-1">
                 <Plus className="h-4 w-4" />
                 <span className="hidden sm:inline">{t(locale, "nav_new_project")}</span>
+              </Button>
+            </Link>
+            <Link href="/app/clients" aria-label="לקוחות">
+              <Button size="sm" variant="ghost" className="gap-1">
+                <UsersRound className="h-4 w-4" />
+                <span className="hidden sm:inline">לקוחות</span>
               </Button>
             </Link>
             <Link href="/app/contacts">

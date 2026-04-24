@@ -11,7 +11,7 @@ export default async function MoneyPage({ params }: { params: { id: string } }) 
   const supabase = createClient();
   const { data: project } = await supabase
     .from("projects")
-    .select("id, contract_value")
+    .select("id, contract_value, client_name")
     .eq("id", params.id)
     .eq("user_id", user.id)
     .maybeSingle();
@@ -92,6 +92,7 @@ export default async function MoneyPage({ params }: { params: { id: string } }) 
         receipts={receipts}
         legacyOut={legacyOut}
         contacts={contacts}
+        clientName={project.client_name}
         outstandingLabor={labor.outstanding}
         settledLabor={labor.settled}
       />

@@ -11,7 +11,6 @@ const ROLE_LABELS: Record<string, string> = {
   worker: "עובד",
   subcontractor: "קבלן משנה",
   supplier: "ספק",
-  client: "לקוח",
   other: "אחר",
 };
 
@@ -32,7 +31,7 @@ export default async function ContactsPage() {
     const k = c.role || "other";
     (groups[k] ??= []).push(c);
   }
-  const orderedKeys = ["worker", "subcontractor", "supplier", "client", "other"].filter(
+  const orderedKeys = ["worker", "subcontractor", "supplier", "other"].filter(
     (k) => groups[k]
   );
 
@@ -49,8 +48,8 @@ export default async function ContactsPage() {
           title="עדיין אין אנשי קשר"
           action={<ContactDialog trigger={<Button size="lg" className="tap">הוסף איש קשר ראשון</Button>} />}
         >
-          עובדים, קבלני משנה, ספקים ולקוחות — כולם כאן במקום אחד. אפשר להוסיף אותם אחר כך
-          לפרויקטים ספציפיים.
+          עובדים, קבלני משנה וספקים — כל מי שאתה עובד מולו באתר. לקוחות מנוהלים
+          בעמוד נפרד תחת "לקוחות".
         </EmptyState>
       ) : (
         <div className="space-y-5">

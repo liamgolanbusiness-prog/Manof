@@ -1,36 +1,70 @@
 "use client";
 
 import { useFormState, useFormStatus } from "react-dom";
+import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { AlertCircle } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { AlertCircle, Plus } from "lucide-react";
 import { createProjectAction, type ProjectFormState } from "../actions";
+import { ClientDialog } from "@/app/app/clients/client-dialog";
 
-export function ProjectForm() {
+type ClientOption = { id: string; name: string };
+
+export function ProjectForm({ clients }: { clients: ClientOption[] }) {
   const [state, action] = useFormState<ProjectFormState, FormData>(
     createProjectAction,
     null
   );
+  const [clientId, setClientId] = useState("");
 
   return (
     <form action={action} className="space-y-4">
+      <input type="hidden" name="client_id" value={clientId} />
       <Field label="שם הפרויקט" name="name" required placeholder='דוגמה: דירה חדשה ברחוב רמב"ם 7' />
       <Field
         label="כתובת"
         name="address"
         placeholder="רחוב ועיר (אפשר לפרט בהמשך)"
       />
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <Field label="שם הלקוח" name="client_name" />
-        <Field
-          label="טלפון הלקוח"
-          name="client_phone"
-          type="tel"
-          inputMode="tel"
-          dir="ltr"
-          placeholder="054-123-4567"
-        />
+      <div className="space-y-1.5">
+        <Label>לקוח</Label>
+        <div className="flex gap-2">
+          <Select value={clientId} onValueChange={setClientId}>
+            <SelectTrigger className="flex-1">
+              <SelectValue placeholder="בחר לקוח (אפשר להשאיר ריק)" />
+            </SelectTrigger>
+            <SelectContent>
+              {clients.length === 0 ? (
+                <SelectItem value="none" disabled>
+                  אין לקוחות — הוסף אחד
+                </SelectItem>
+              ) : (
+                clients.map((c) => (
+                  <SelectItem key={c.id} value={c.id}>
+                    {c.name}
+                  </SelectItem>
+                ))
+              )}
+            </SelectContent>
+          </Select>
+          <ClientDialog
+            onCreated={(id) => setClientId(id)}
+            trigger={
+              <Button type="button" variant="outline" className="tap gap-1">
+                <Plus className="h-4 w-4" />
+                חדש
+              </Button>
+            }
+          />
+        </div>
       </div>
       <div className="grid grid-cols-2 gap-3">
         <Field label="תאריך התחלה" name="start_date" type="date" />

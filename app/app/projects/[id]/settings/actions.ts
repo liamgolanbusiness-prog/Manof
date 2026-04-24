@@ -4,7 +4,6 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { requireUser } from "@/lib/auth";
-import { normalizeIsraeliPhone } from "@/lib/phone";
 
 export type SettingsFormState = { error?: string; ok?: boolean } | null;
 
@@ -39,17 +38,26 @@ export async function updateProject(
   const id = String(formData.get("id") ?? "");
   if (!id) return { error: "חסר מזהה" };
 
-  const phoneInput = String(formData.get("client_phone") ?? "").trim();
+  const client_id = String(formData.get("client_id") ?? "").trim() || null;
+  let client_name: string | null = null;
   let client_phone: string | null = null;
-  if (phoneInput) {
-    client_phone = normalizeIsraeliPhone(phoneInput);
-    if (!client_phone) return { error: "טלפון הלקוח לא תקין (נדרש מספר ישראלי)" };
+  if (client_id) {
+    const { data: cli } = await supabase
+      .from("clients")
+      .select("name, phone")
+      .eq("id", client_id)
+      .eq("user_id", user.id)
+      .maybeSingle();
+    if (!cli) return { error: "הלקוח הנבחר לא נמצא" };
+    client_name = cli.name;
+    client_phone = cli.phone;
   }
 
   const update = {
     name: String(formData.get("name") ?? "").trim(),
     address: String(formData.get("address") ?? "").trim() || null,
-    client_name: String(formData.get("client_name") ?? "").trim() || null,
+    client_id,
+    client_name,
     client_phone,
     contract_value: parseAmount(formData.get("contract_value")),
     start_date: parseDate(formData.get("start_date")),

@@ -13,14 +13,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { AlertCircle, Loader2, Trash2 } from "lucide-react";
+import { AlertCircle, Loader2, Plus, Trash2 } from "lucide-react";
 import { updateProject, deleteProject, type SettingsFormState } from "./actions";
 import { useToast } from "@/components/ui/use-toast";
+import { ClientDialog } from "@/app/app/clients/client-dialog";
 
 type Project = {
   id: string;
   name: string;
   address: string | null;
+  client_id: string | null;
   client_name: string | null;
   client_phone: string | null;
   contract_value: number | null;
@@ -29,10 +31,20 @@ type Project = {
   status: string | null;
   progress_pct: number | null;
 };
+type Client = {
+  id: string;
+  name: string;
+  phone: string | null;
+  email: string | null;
+  tax_id: string | null;
+  billing_address: string | null;
+  notes: string | null;
+};
 
-export function SettingsForm({ project }: { project: Project }) {
+export function SettingsForm({ project, clients }: { project: Project; clients: Client[] }) {
   const [state, action] = useFormState<SettingsFormState, FormData>(updateProject, null);
   const [status, setStatus] = useState(project.status ?? "active");
+  const [clientId, setClientId] = useState(project.client_id ?? "");
   const [deleting, startDeleting] = useTransition();
   const { toast } = useToast();
   const router = useRouter();
@@ -53,17 +65,40 @@ export function SettingsForm({ project }: { project: Project }) {
     <form action={action} className="space-y-4">
       <input type="hidden" name="id" value={project.id} />
       <input type="hidden" name="status" value={status} />
+      <input type="hidden" name="client_id" value={clientId} />
       <Field label="שם הפרויקט *" name="name" defaultValue={project.name} required />
       <Field label="כתובת" name="address" defaultValue={project.address ?? ""} />
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <Field label="לקוח" name="client_name" defaultValue={project.client_name ?? ""} />
-        <Field
-          label="טלפון לקוח"
-          name="client_phone"
-          type="tel"
-          dir="ltr"
-          defaultValue={project.client_phone ?? ""}
-        />
+      <div className="space-y-1.5">
+        <Label>לקוח</Label>
+        <div className="flex gap-2">
+          <Select value={clientId} onValueChange={setClientId}>
+            <SelectTrigger className="flex-1">
+              <SelectValue placeholder="בחר לקוח" />
+            </SelectTrigger>
+            <SelectContent>
+              {clients.length === 0 ? (
+                <SelectItem value="none" disabled>
+                  אין לקוחות — הוסף אחד
+                </SelectItem>
+              ) : (
+                clients.map((c) => (
+                  <SelectItem key={c.id} value={c.id}>
+                    {c.name}
+                  </SelectItem>
+                ))
+              )}
+            </SelectContent>
+          </Select>
+          <ClientDialog
+            onCreated={(id) => setClientId(id)}
+            trigger={
+              <Button type="button" variant="outline" size="default" className="tap gap-1">
+                <Plus className="h-4 w-4" />
+                חדש
+              </Button>
+            }
+          />
+        </div>
       </div>
       <div className="grid grid-cols-2 gap-3">
         <Field

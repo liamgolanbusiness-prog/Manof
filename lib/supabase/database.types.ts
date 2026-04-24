@@ -117,6 +117,7 @@ export interface Database {
           user_id: string;
           name: string;
           address: string | null;
+          client_id: string | null;
           client_name: string | null;
           client_phone: string | null;
           contract_value: number | null;
@@ -139,6 +140,7 @@ export interface Database {
           user_id: string;
           name: string;
           address?: string | null;
+          client_id?: string | null;
           client_name?: string | null;
           client_phone?: string | null;
           contract_value?: number | null;
@@ -161,6 +163,7 @@ export interface Database {
           user_id?: string;
           name?: string;
           address?: string | null;
+          client_id?: string | null;
           client_name?: string | null;
           client_phone?: string | null;
           contract_value?: number | null;
@@ -175,6 +178,45 @@ export interface Database {
           portal_last_viewed_at?: Timestamp | null;
           portal_view_count?: number | null;
           progress_pct?: number | null;
+          created_at?: Timestamp | null;
+          updated_at?: Timestamp | null;
+        };
+        Relationships: [];
+      };
+      clients: {
+        Row: {
+          id: string;
+          user_id: string;
+          name: string;
+          phone: string | null;
+          email: string | null;
+          tax_id: string | null;
+          billing_address: string | null;
+          notes: string | null;
+          created_at: Timestamp | null;
+          updated_at: Timestamp | null;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          name: string;
+          phone?: string | null;
+          email?: string | null;
+          tax_id?: string | null;
+          billing_address?: string | null;
+          notes?: string | null;
+          created_at?: Timestamp | null;
+          updated_at?: Timestamp | null;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          name?: string;
+          phone?: string | null;
+          email?: string | null;
+          tax_id?: string | null;
+          billing_address?: string | null;
+          notes?: string | null;
           created_at?: Timestamp | null;
           updated_at?: Timestamp | null;
         };
