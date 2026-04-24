@@ -90,7 +90,6 @@ export async function updateBusinessProfile(
 
   if (error) return { error: error.message };
   revalidatePath("/app/settings");
-  revalidatePath("/app/settings");
   return { ok: true };
 }
 
@@ -120,7 +119,6 @@ export async function uploadLogoAction(formData: FormData): Promise<{ url?: stri
     .eq("id", user.id);
   if (updErr) return { error: updErr.message };
   revalidatePath("/app/settings");
-  revalidatePath("/app/settings");
   return { url: pub.publicUrl };
 }
 
@@ -128,7 +126,6 @@ export async function removeLogoAction(): Promise<{ ok: boolean }> {
   const user = await requireUser();
   const supabase = createClient();
   await supabase.from("profiles").update({ logo_url: null }).eq("id", user.id);
-  revalidatePath("/app/settings");
   revalidatePath("/app/settings");
   return { ok: true };
 }
