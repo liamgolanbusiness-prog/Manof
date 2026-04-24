@@ -88,13 +88,24 @@ export async function signupAction(
     };
   }
 
-  // Best-effort: fill profile.full_name if the trigger-created row is empty.
+  // Best-effort: fill profile.full_name if the trigger-created row is empty
+  // and grant a 30-day pro trial so new users can actually try invoicing /
+  // multiple projects before hitting the free-tier gate.
   if (data.user) {
+    const trialEndsAt = new Date(Date.now() + 30 * 86400_000).toISOString();
     await supabase
       .from("profiles")
       .update({ full_name: fullName })
       .eq("id", data.user.id)
       .is("full_name", null);
+    await supabase
+      .from("profiles")
+      .update({
+        subscription_status: "trialing",
+        trial_ends_at: trialEndsAt,
+      })
+      .eq("id", data.user.id)
+      .is("trial_ends_at", null);
   }
 
   // Fire-and-forget welcome email (no-op when RESEND_API_KEY missing).
