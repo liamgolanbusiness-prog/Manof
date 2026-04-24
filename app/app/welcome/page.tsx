@@ -5,6 +5,7 @@ import { Building2, HardHat, Sparkles, PlusCircle, Settings as SettingsIcon, Arr
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { seedDemoProjectAction, skipOnboardingAction } from "./actions";
+import { WelcomeSubmitButton } from "./submit-button";
 
 export const metadata = { title: "ברוך הבא · אתר" };
 
@@ -64,10 +65,10 @@ export default async function WelcomePage() {
             </div>
           </div>
           <form action={skipOnboardingAction}>
-            <Button type="submit" size="sm">
+            <WelcomeSubmitButton>
               <ArrowLeft className="h-4 w-4" />
               צור פרויקט
-            </Button>
+            </WelcomeSubmitButton>
           </form>
         </CardContent>
       </Card>
@@ -84,10 +85,10 @@ export default async function WelcomePage() {
             </div>
           </div>
           <form action={seedDemoProjectAction}>
-            <Button type="submit" size="sm" variant="outline">
+            <WelcomeSubmitButton variant="outline">
               <Sparkles className="h-4 w-4" />
               פרויקט דוגמה
-            </Button>
+            </WelcomeSubmitButton>
           </form>
         </CardContent>
       </Card>

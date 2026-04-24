@@ -179,6 +179,7 @@ export function InvoiceList({
                     );
                   }}
                   disabled={pending}
+                  aria-label="בטל"
                 >
                   <X className="h-4 w-4" />
                 </Button>
@@ -193,6 +194,7 @@ export function InvoiceList({
                     withToast(() => deleteInvoice(projectId, inv.id), "נמחק");
                   }}
                   disabled={pending}
+                  aria-label="מחק"
                 >
                   <Trash2 className="h-4 w-4" />
                 </Button>

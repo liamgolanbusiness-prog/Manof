@@ -123,6 +123,7 @@ export function ChangeList({
                     );
                   }}
                   disabled={pending}
+                  aria-label="מחק"
                 >
                   <Trash2 className="h-4 w-4" />
                 </Button>
