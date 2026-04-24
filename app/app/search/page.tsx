@@ -63,7 +63,11 @@ export default async function SearchPage({
 
 async function Results({ q }: { q: string }) {
   const supabase = createClient();
-  const pattern = `%${q.replace(/[%_]/g, "")}%`;
+  // Strip PostgREST-meaningful characters before embedding in `.or(...)` —
+  // commas split the filter, parens and quotes can change the expression
+  // grammar, underscore/percent are LIKE wildcards.
+  const safe = q.replace(/[%_,()'"\\]/g, "").trim();
+  const pattern = `%${safe}%`;
 
   const [projects, contacts, clients, expenses, reports, invoices, tasks] = await Promise.all([
     supabase

@@ -154,14 +154,25 @@ function advance(fromDate: string, freq: string): string {
       d.setDate(d.getDate() + 14);
       break;
     case "monthly":
-      d.setMonth(d.getMonth() + 1);
+      addMonthsClamped(d, 1);
       break;
     case "quarterly":
-      d.setMonth(d.getMonth() + 3);
+      addMonthsClamped(d, 3);
       break;
     case "yearly":
-      d.setFullYear(d.getFullYear() + 1);
+      addMonthsClamped(d, 12);
       break;
   }
   return d.toISOString().slice(0, 10);
+}
+
+// JS Date's setMonth overflows (Jan 31 + 1 month → Mar 3). Clamp the day to
+// the last day of the target month so monthly recurrences land on the 28th
+// / 30th / 31st as appropriate instead of skipping into the next month.
+function addMonthsClamped(d: Date, months: number): void {
+  const day = d.getDate();
+  d.setDate(1);
+  d.setMonth(d.getMonth() + months);
+  const lastDayOfTarget = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
+  d.setDate(Math.min(day, lastDayOfTarget));
 }
