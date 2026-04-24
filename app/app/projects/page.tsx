@@ -58,7 +58,7 @@ export default async function ProjectsPage() {
                 {p.cover_photo_url ? (
                   <Image
                     src={p.cover_photo_url}
-                    alt=""
+                    alt={`תמונת שער — ${p.name}`}
                     fill
                     sizes="(max-width: 640px) 100vw, 360px"
                     className="object-cover"
