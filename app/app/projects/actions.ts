@@ -77,6 +77,15 @@ export async function createProjectAction(
     return { error: `לא הצלחנו לשמור: ${error.message}` };
   }
 
+  // Creating a project counts as onboarding complete — otherwise a user who
+  // lands on /app/projects/new directly (before the welcome step) would keep
+  // getting redirected back to the welcome page from the dashboard.
+  await supabase
+    .from("profiles")
+    .update({ onboarding_completed_at: new Date().toISOString() })
+    .eq("id", user.id)
+    .is("onboarding_completed_at", null);
+
   revalidatePath("/app/projects");
   redirect(`/app/projects/${data.id}/today`);
 }
