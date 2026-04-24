@@ -115,6 +115,7 @@ export async function setMaterialStatus(
     .from("materials")
     .update({ status })
     .eq("id", id)
+    .eq("project_id", projectId)
     .eq("user_id", user.id);
   if (error) throw new Error(error.message);
   revalidatePath(`/app/projects/${projectId}/materials`);
@@ -126,6 +127,7 @@ export async function deleteMaterial(projectId: string, id: string) {
     .from("materials")
     .delete()
     .eq("id", id)
+    .eq("project_id", projectId)
     .eq("user_id", user.id);
   if (error) throw new Error(error.message);
   revalidatePath(`/app/projects/${projectId}/materials`);

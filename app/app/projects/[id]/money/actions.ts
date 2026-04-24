@@ -59,7 +59,11 @@ export async function createExpense(input: {
 
 export async function deleteExpense(projectId: string, id: string) {
   const { supabase } = await assertProjectAccess(projectId);
-  const { error } = await supabase.from("expenses").delete().eq("id", id);
+  const { error } = await supabase
+    .from("expenses")
+    .delete()
+    .eq("id", id)
+    .eq("project_id", projectId);
   if (error) throw new Error(error.message);
   revalidatePath(`/app/projects/${projectId}/money`);
 }
@@ -106,7 +110,11 @@ export async function createPayment(input: {
 
 export async function deletePayment(projectId: string, id: string) {
   const { supabase } = await assertProjectAccess(projectId);
-  const { error } = await supabase.from("payments").delete().eq("id", id);
+  const { error } = await supabase
+    .from("payments")
+    .delete()
+    .eq("id", id)
+    .eq("project_id", projectId);
   if (error) throw new Error(error.message);
   revalidatePath(`/app/projects/${projectId}/money`);
 }
@@ -120,7 +128,8 @@ export async function markExpensePaid(
   const { error } = await supabase
     .from("expenses")
     .update({ paid_at: paid ? new Date().toISOString() : null })
-    .eq("id", expenseId);
+    .eq("id", expenseId)
+    .eq("project_id", projectId);
   if (error) throw new Error(error.message);
   revalidatePath(`/app/projects/${projectId}/money`);
 }
@@ -150,7 +159,11 @@ export async function settleWorker(input: {
 
 export async function deleteWorkerPayment(projectId: string, id: string) {
   const { supabase } = await assertProjectAccess(projectId);
-  const { error } = await supabase.from("worker_payments").delete().eq("id", id);
+  const { error } = await supabase
+    .from("worker_payments")
+    .delete()
+    .eq("id", id)
+    .eq("project_id", projectId);
   if (error) throw new Error(error.message);
   revalidatePath(`/app/projects/${projectId}/money`);
 }

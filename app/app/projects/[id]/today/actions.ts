@@ -273,7 +273,8 @@ export async function resolveIssue(projectId: string, issueId: string) {
   const { error } = await supabase
     .from("issues")
     .update({ status: "resolved", resolved_at: new Date().toISOString() })
-    .eq("id", issueId);
+    .eq("id", issueId)
+    .eq("project_id", projectId);
   if (error) throw new Error(error.message);
   revalidatePath(`/app/projects/${projectId}/today`);
 }
