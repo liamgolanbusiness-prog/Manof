@@ -86,23 +86,27 @@ export async function seedDemoProjectAction() {
     weather: "מעונן, 22°",
   });
 
-  // Expenses + payment
+  // Expenses + payment. Categories are slugs (money/dashboard/search map
+  // them to Hebrew labels); storing raw Hebrew here would render but break
+  // the category filter on the money page. Mark one expense as paid so the
+  // demo shows both sides of the "חוב פתוח / שולם" split.
   await supabase.from("expenses").insert([
     {
       user_id: user.id,
       project_id: project.id,
       amount: 4200,
-      category: "חומרי בניין",
+      category: "materials",
       supplier_contact_id: supplierId,
-      payment_method: "העברה",
+      payment_method: "bank",
       notes: "קרמיקה וצבע",
+      paid_at: new Date().toISOString(),
     },
     {
       user_id: user.id,
       project_id: project.id,
       amount: 1500,
-      category: "כלים",
-      payment_method: "מזומן",
+      category: "tools",
+      payment_method: "cash",
     },
   ]);
   await supabase.from("payments").insert({
@@ -110,7 +114,7 @@ export async function seedDemoProjectAction() {
     project_id: project.id,
     direction: "in",
     amount: 50000,
-    method: "העברה",
+    method: "bank",
     notes: "מקדמה מהלקוח",
   });
 
