@@ -8,8 +8,8 @@ import {
   Plus,
   Receipt,
   Banknote,
-  ArrowUpRight,
   ArrowDownLeft,
+  ArrowUpRight,
   ExternalLink,
   Trash2,
   Download,
@@ -65,35 +65,42 @@ type Contact = {
 export function MoneyTabs({
   projectId,
   expenses,
-  payments,
+  receipts,
+  legacyOut,
   contacts,
   outstandingLabor,
   settledLabor,
 }: {
   projectId: string;
   expenses: Expense[];
-  payments: Payment[];
+  receipts: Payment[];
+  legacyOut: Payment[];
   contacts: Contact[];
   outstandingLabor: OutstandingLabor[];
   settledLabor: SettledLabor[];
 }) {
-  const [tab, setTab] = useState<"expenses" | "payments">("expenses");
+  const [tab, setTab] = useState<"expenses" | "receipts">("expenses");
   const unpaidCount =
     expenses.filter((e) => !e.paid_at).length + outstandingLabor.length;
-  const paidCount = expenses.filter((e) => e.paid_at).length + settledLabor.length;
+  const paidCount =
+    expenses.filter((e) => e.paid_at).length +
+    settledLabor.length +
+    legacyOut.length;
 
   return (
-    <Tabs value={tab} onValueChange={(v) => setTab(v as "expenses" | "payments")}>
+    <Tabs value={tab} onValueChange={(v) => setTab(v as "expenses" | "receipts")}>
       <div className="flex items-center justify-between gap-2">
         <TabsList>
           <TabsTrigger value="expenses">
             הוצאות ({unpaidCount + paidCount})
           </TabsTrigger>
-          <TabsTrigger value="payments">תשלומים ({payments.length})</TabsTrigger>
+          <TabsTrigger value="receipts">תקבולים ({receipts.length})</TabsTrigger>
         </TabsList>
         <div className="flex items-center gap-1">
           <a
-            href={`/api/projects/${projectId}/export?kind=${tab}`}
+            href={`/api/projects/${projectId}/export?kind=${
+              tab === "receipts" ? "payments" : "expenses"
+            }`}
             download
             className="tap grid place-items-center h-9 w-9 rounded-lg text-muted-foreground hover:bg-muted"
             aria-label="הורד CSV"
@@ -119,7 +126,7 @@ export function MoneyTabs({
               trigger={
                 <Button size="sm" className="tap gap-1">
                   <Plus className="h-4 w-4" />
-                  תשלום
+                  תקבול
                 </Button>
               }
             />
@@ -134,12 +141,13 @@ export function MoneyTabs({
           contacts={contacts}
           outstandingLabor={outstandingLabor}
           settledLabor={settledLabor}
+          legacyOut={legacyOut}
           unpaidCount={unpaidCount}
           paidCount={paidCount}
         />
       </TabsContent>
-      <TabsContent value="payments" className="mt-3">
-        <PaymentList projectId={projectId} payments={payments} contacts={contacts} />
+      <TabsContent value="receipts" className="mt-3">
+        <ReceiptList projectId={projectId} receipts={receipts} contacts={contacts} />
       </TabsContent>
     </Tabs>
   );
@@ -162,6 +170,7 @@ function ExpenseList({
   contacts,
   outstandingLabor,
   settledLabor,
+  legacyOut,
   unpaidCount,
   paidCount,
 }: {
@@ -170,6 +179,7 @@ function ExpenseList({
   contacts: Contact[];
   outstandingLabor: OutstandingLabor[];
   settledLabor: SettledLabor[];
+  legacyOut: Payment[];
   unpaidCount: number;
   paidCount: number;
 }) {
@@ -196,7 +206,7 @@ function ExpenseList({
   const isEmpty =
     filter === "unpaid"
       ? unpaidExpenses.length + outstandingLabor.length === 0
-      : paidExpenses.length + settledLabor.length === 0;
+      : paidExpenses.length + settledLabor.length + legacyOut.length === 0;
 
   return (
     <div className="space-y-3">
@@ -269,6 +279,17 @@ function ExpenseList({
                       onUndo={() => {
                         if (!confirm("לבטל את סגירת החודש?")) return;
                         run(() => deleteWorkerPayment(projectId, s.id));
+                      }}
+                    />
+                  ))}
+                  {legacyOut.map((p) => (
+                    <LegacyOutRow
+                      key={`out-${p.id}`}
+                      payment={p}
+                      contactsById={contactsById}
+                      onDelete={() => {
+                        if (!confirm("למחוק את התשלום?")) return;
+                        run(() => deletePayment(projectId, p.id));
                       }}
                     />
                   ))}
@@ -486,23 +507,70 @@ function SettledLaborRow({
   );
 }
 
-function PaymentList({
+function LegacyOutRow({
+  payment: p,
+  contactsById,
+  onDelete,
+}: {
+  payment: Payment;
+  contactsById: Record<string, Contact>;
+  onDelete: () => void;
+}) {
+  return (
+    <li className="p-3 flex items-center gap-3">
+      <div className="h-10 w-10 rounded-lg bg-warning/10 text-warning grid place-items-center shrink-0">
+        <ArrowUpRight className="h-4 w-4" />
+      </div>
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-2">
+          <span className="font-medium">{formatCurrency(Number(p.amount))}</span>
+          <span className="text-xs text-muted-foreground">· תשלום יוצא</span>
+        </div>
+        <div className="text-xs text-muted-foreground truncate">
+          {[
+            p.counterparty_contact_id
+              ? contactsById[p.counterparty_contact_id]?.name
+              : null,
+            p.method,
+            formatDateShort(p.payment_date),
+            p.invoice_number ? `חשבונית ${p.invoice_number}` : null,
+          ]
+            .filter(Boolean)
+            .join(" · ")}
+        </div>
+        {p.notes ? (
+          <div className="text-xs text-muted-foreground truncate">{p.notes}</div>
+        ) : null}
+      </div>
+      <button
+        type="button"
+        className="tap grid place-items-center h-9 w-9 rounded-lg text-muted-foreground hover:text-destructive"
+        aria-label="מחק"
+        onClick={onDelete}
+      >
+        <Trash2 className="h-4 w-4" />
+      </button>
+    </li>
+  );
+}
+
+function ReceiptList({
   projectId,
-  payments,
+  receipts,
   contacts,
 }: {
   projectId: string;
-  payments: Payment[];
+  receipts: Payment[];
   contacts: Contact[];
 }) {
   const contactsById = Object.fromEntries(contacts.map((c) => [c.id, c]));
   const { toast } = useToast();
   const router = useRouter();
 
-  if (payments.length === 0) {
+  if (receipts.length === 0) {
     return (
-      <EmptyState icon={Banknote} title="עדיין אין תשלומים">
-        תיעוד של כסף שנכנס מהלקוח ושיצא לעובדים ולספקים.
+      <EmptyState icon={Banknote} title="עדיין אין תקבולים">
+        תיעוד של כסף שנכנס מהלקוח — מקדמות, תשלומי ביניים וסגירת חשבון.
       </EmptyState>
     );
   }
@@ -511,62 +579,54 @@ function PaymentList({
     <Card>
       <CardContent className="p-0">
         <ul className="divide-y">
-          {payments.map((p) => {
-            const isIn = p.direction === "in";
-            return (
-              <li key={p.id} className="p-3 flex items-center gap-3">
-                <div
-                  className={`h-10 w-10 rounded-lg grid place-items-center shrink-0 ${
-                    isIn ? "bg-success/10 text-success" : "bg-warning/10 text-warning"
-                  }`}
-                >
-                  {isIn ? <ArrowDownLeft className="h-4 w-4" /> : <ArrowUpRight className="h-4 w-4" />}
+          {receipts.map((p) => (
+            <li key={p.id} className="p-3 flex items-center gap-3">
+              <div className="h-10 w-10 rounded-lg bg-success/10 text-success grid place-items-center shrink-0">
+                <ArrowDownLeft className="h-4 w-4" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2">
+                  <span className="font-medium text-success">
+                    +{formatCurrency(Number(p.amount))}
+                  </span>
+                  <span className="text-xs text-muted-foreground">התקבל</span>
                 </div>
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
-                    <span className={`font-medium ${isIn ? "text-success" : ""}`}>
-                      {isIn ? "+" : "-"}
-                      {formatCurrency(Number(p.amount))}
-                    </span>
-                    <span className="text-xs text-muted-foreground">
-                      {isIn ? "התקבל" : "יצא"}
-                    </span>
-                  </div>
+                <div className="text-xs text-muted-foreground truncate">
+                  {[
+                    p.counterparty_contact_id
+                      ? contactsById[p.counterparty_contact_id]?.name
+                      : null,
+                    p.method,
+                    formatDateShort(p.payment_date),
+                    p.invoice_number ? `חשבונית ${p.invoice_number}` : null,
+                  ]
+                    .filter(Boolean)
+                    .join(" · ")}
+                </div>
+                {p.notes ? (
                   <div className="text-xs text-muted-foreground truncate">
-                    {[
-                      p.counterparty_contact_id
-                        ? contactsById[p.counterparty_contact_id]?.name
-                        : null,
-                      p.method,
-                      formatDateShort(p.payment_date),
-                      p.invoice_number ? `חשבונית ${p.invoice_number}` : null,
-                    ]
-                      .filter(Boolean)
-                      .join(" · ")}
+                    {p.notes}
                   </div>
-                  {p.notes ? (
-                    <div className="text-xs text-muted-foreground truncate">{p.notes}</div>
-                  ) : null}
-                </div>
-                <button
-                  type="button"
-                  className="tap grid place-items-center h-9 w-9 rounded-lg text-muted-foreground hover:text-destructive"
-                  aria-label="מחק"
-                  onClick={async () => {
-                    if (!confirm("למחוק את התשלום?")) return;
-                    try {
-                      await deletePayment(projectId, p.id);
-                      router.refresh();
-                    } catch (err) {
-                      toast({ title: (err as Error).message, variant: "destructive" });
-                    }
-                  }}
-                >
-                  <Trash2 className="h-4 w-4" />
-                </button>
-              </li>
-            );
-          })}
+                ) : null}
+              </div>
+              <button
+                type="button"
+                className="tap grid place-items-center h-9 w-9 rounded-lg text-muted-foreground hover:text-destructive"
+                aria-label="מחק"
+                onClick={async () => {
+                  if (!confirm("למחוק את התקבול?")) return;
+                  try {
+                    await deletePayment(projectId, p.id);
+                    router.refresh();
+                  } catch (err) {
+                    toast({ title: (err as Error).message, variant: "destructive" });
+                  }
+                }}
+              >
+                <Trash2 className="h-4 w-4" />
+              </button>
+            </li>
+          ))}
         </ul>
       </CardContent>
     </Card>

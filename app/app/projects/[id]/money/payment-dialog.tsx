@@ -22,11 +22,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { AlertCircle, ArrowDownLeft, ArrowUpRight, Loader2, Plus } from "lucide-react";
+import { AlertCircle, Loader2, Plus } from "lucide-react";
 import { createPayment } from "./actions";
 import { useToast } from "@/components/ui/use-toast";
 import { isoDate } from "@/lib/format";
-import { cn } from "@/lib/utils";
 
 const PAYMENT_METHODS = [
   { value: "cash", label: "מזומן" },
@@ -53,7 +52,6 @@ export function PaymentDialog({
   const router = useRouter();
   const { toast } = useToast();
 
-  const [direction, setDirection] = useState<"in" | "out">("in");
   const [amount, setAmount] = useState("");
   const [counterpartyId, setCounterpartyId] = useState("");
   const [method, setMethod] = useState<string>("bit");
@@ -62,7 +60,6 @@ export function PaymentDialog({
   const [notes, setNotes] = useState("");
 
   function reset() {
-    setDirection("in");
     setAmount("");
     setCounterpartyId("");
     setMethod("bit");
@@ -78,7 +75,7 @@ export function PaymentDialog({
       try {
         await createPayment({
           projectId,
-          direction,
+          direction: "in",
           amount,
           counterparty_contact_id: counterpartyId || null,
           method: method || null,
@@ -96,10 +93,7 @@ export function PaymentDialog({
     });
   }
 
-  // Direction filter for counterparties: in = clients; out = suppliers/workers/subcontractors
-  const options = contacts.filter((c) =>
-    direction === "in" ? c.role === "client" : c.role !== "client"
-  );
+  const clientOptions = contacts.filter((c) => c.role === "client");
 
   return (
     <Dialog
@@ -112,38 +106,10 @@ export function PaymentDialog({
       <DialogTrigger asChild>{trigger}</DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>תשלום חדש</DialogTitle>
-          <DialogDescription>כסף שהתקבל מלקוח או ששולם למישהו.</DialogDescription>
+          <DialogTitle>תקבול חדש</DialogTitle>
+          <DialogDescription>כסף שהתקבל מהלקוח.</DialogDescription>
         </DialogHeader>
         <div className="space-y-3">
-          <div className="grid grid-cols-2 gap-2">
-            <button
-              type="button"
-              className={cn(
-                "tap flex items-center gap-2 rounded-xl border p-3 text-sm font-medium",
-                direction === "in"
-                  ? "border-success bg-success/5 text-success"
-                  : "border-border bg-background text-muted-foreground"
-              )}
-              onClick={() => setDirection("in")}
-            >
-              <ArrowDownLeft className="h-4 w-4" />
-              התקבל מלקוח
-            </button>
-            <button
-              type="button"
-              className={cn(
-                "tap flex items-center gap-2 rounded-xl border p-3 text-sm font-medium",
-                direction === "out"
-                  ? "border-warning bg-warning/5 text-warning"
-                  : "border-border bg-background text-muted-foreground"
-              )}
-              onClick={() => setDirection("out")}
-            >
-              <ArrowUpRight className="h-4 w-4" />
-              שולם לאחרים
-            </button>
-          </div>
           <div className="space-y-1.5">
             <Label htmlFor="p-amount">סכום (₪) *</Label>
             <Input
@@ -155,18 +121,18 @@ export function PaymentDialog({
             />
           </div>
           <div className="space-y-1.5">
-            <Label>צד שני</Label>
+            <Label>לקוח</Label>
             <Select value={counterpartyId} onValueChange={setCounterpartyId}>
               <SelectTrigger>
-                <SelectValue placeholder={direction === "in" ? "לקוח" : "עובד / ספק / קבלן"} />
+                <SelectValue placeholder="בחר לקוח" />
               </SelectTrigger>
               <SelectContent>
-                {options.length === 0 ? (
+                {clientOptions.length === 0 ? (
                   <SelectItem value="none" disabled>
-                    אין אנשי קשר מתאימים
+                    אין לקוחות — הוסף איש קשר עם תפקיד "לקוח"
                   </SelectItem>
                 ) : (
-                  options.map((c) => (
+                  clientOptions.map((c) => (
                     <SelectItem key={c.id} value={c.id}>
                       {c.name}
                       {c.trade ? ` · ${c.trade}` : ""}
@@ -225,7 +191,7 @@ export function PaymentDialog({
         <DialogFooter>
           <Button onClick={save} disabled={saving || !amount} className="tap">
             {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
-            שמור תשלום
+            שמור תקבול
           </Button>
         </DialogFooter>
       </DialogContent>

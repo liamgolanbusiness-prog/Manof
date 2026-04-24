@@ -43,27 +43,28 @@ export default async function MoneyPage({ params }: { params: { id: string } }) 
   const expenses = expRes.data ?? [];
   const payments = payRes.data ?? [];
   const contacts = contactsRes.data ?? [];
-  const contactsById: Record<string, (typeof contacts)[number]> = {};
-  for (const c of contacts) contactsById[c.id] = c;
+
+  // Incoming client payments live in the "תקבולים" tab. Outgoing payments
+  // are legacy: the UI no longer creates them, but we still surface old
+  // rows as paid-expense entries so users can see/delete them.
+  const receipts = payments.filter((p) => p.direction === "in");
+  const legacyOut = payments.filter((p) => p.direction === "out");
 
   // Exclude labor-category expenses linked to a worker — they're already
   // inside labor.totalLaborGross, and their effect is reflected in the
   // per-worker `outstanding` calculation.
   const nonLaborExpenses = expenses.filter((e) => !labor.laborExpenseIds.has(e.id));
+  const legacyOutTotal = legacyOut.reduce((s, p) => s + Number(p.amount), 0);
   const totalExpenses =
     nonLaborExpenses.reduce((s, e) => s + Number(e.amount), 0) +
-    labor.totalLaborGross;
+    labor.totalLaborGross +
+    legacyOutTotal;
   const totalOutstanding =
     nonLaborExpenses
       .filter((e) => !e.paid_at)
       .reduce((s, e) => s + Number(e.amount), 0) +
     labor.outstanding.reduce((s, l) => s + l.outstandingAmount, 0);
-  const paymentsIn = payments
-    .filter((p) => p.direction === "in")
-    .reduce((s, p) => s + Number(p.amount), 0);
-  const paymentsOut = payments
-    .filter((p) => p.direction === "out")
-    .reduce((s, p) => s + Number(p.amount), 0);
+  const paymentsIn = receipts.reduce((s, p) => s + Number(p.amount), 0);
   const budget = Number(project.contract_value ?? 0);
   const remaining = budget ? budget - totalExpenses : null;
 
@@ -77,19 +78,19 @@ export default async function MoneyPage({ params }: { params: { id: string } }) 
           value={remaining != null ? formatCurrency(remaining) : "—"}
           tone={remaining != null && remaining < 0 ? "destructive" : "success"}
         />
-        <KPI label="התקבל מלקוח" value={formatCurrency(paymentsIn)} tone="success" />
-        <KPI label="שולם לאחרים" value={formatCurrency(paymentsOut)} tone="warning" />
         <KPI
           label="חוב פתוח"
           value={formatCurrency(totalOutstanding)}
           tone={totalOutstanding > 0 ? "warning" : "muted"}
         />
+        <KPI label="התקבל מלקוח" value={formatCurrency(paymentsIn)} tone="success" />
       </div>
 
       <MoneyTabs
         projectId={params.id}
         expenses={expenses}
-        payments={payments}
+        receipts={receipts}
+        legacyOut={legacyOut}
         contacts={contacts}
         outstandingLabor={labor.outstanding}
         settledLabor={labor.settled}
@@ -124,4 +125,3 @@ function KPI({
     </Card>
   );
 }
-
