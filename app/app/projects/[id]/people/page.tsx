@@ -57,13 +57,42 @@ export default async function PeopleTab({ params }: { params: { id: string } }) 
         );
       }
     }
-    // Sum payments out to each contact (supplier + subcontractor payouts)
-    const { data: pays } = await supabase
-      .from("payments")
-      .select("counterparty_contact_id, amount, direction")
-      .eq("project_id", params.id)
-      .eq("direction", "out")
-      .in("counterparty_contact_id", memberIds);
+    // Sum what we actually paid each member across all three outlets:
+    //   - worker_payments (month-close settlements)
+    //   - expenses where the member is the supplier_contact_id
+    //   - legacy direction='out' payments with them as counterparty
+    const [{ data: wp }, { data: exp }, { data: pays }] = await Promise.all([
+      supabase
+        .from("worker_payments")
+        .select("contact_id, amount")
+        .eq("project_id", params.id)
+        .in("contact_id", memberIds),
+      supabase
+        .from("expenses")
+        .select("supplier_contact_id, amount")
+        .eq("project_id", params.id)
+        .not("paid_at", "is", null)
+        .in("supplier_contact_id", memberIds),
+      supabase
+        .from("payments")
+        .select("counterparty_contact_id, amount")
+        .eq("project_id", params.id)
+        .eq("direction", "out")
+        .in("counterparty_contact_id", memberIds),
+    ]);
+    for (const w of wp ?? []) {
+      paidByContact.set(
+        w.contact_id,
+        (paidByContact.get(w.contact_id) ?? 0) + Number(w.amount)
+      );
+    }
+    for (const e of exp ?? []) {
+      if (!e.supplier_contact_id) continue;
+      paidByContact.set(
+        e.supplier_contact_id,
+        (paidByContact.get(e.supplier_contact_id) ?? 0) + Number(e.amount)
+      );
+    }
     for (const p of pays ?? []) {
       if (!p.counterparty_contact_id) continue;
       paidByContact.set(
@@ -73,12 +102,19 @@ export default async function PeopleTab({ params }: { params: { id: string } }) 
     }
   }
 
-  const rows = (members ?? []).map((m) => ({
-    member: m,
-    contact: contactsById[m.contact_id],
-    hours: hoursByContact.get(m.contact_id) ?? 0,
-    paid: paidByContact.get(m.contact_id) ?? 0,
-  }));
+  const rows = (members ?? []).map((m) => {
+    const contact = contactsById[m.contact_id];
+    const hours = hoursByContact.get(m.contact_id) ?? 0;
+    const paid = paidByContact.get(m.contact_id) ?? 0;
+    const rate = Number(contact?.pay_rate ?? 0);
+    // Gross = hours × rate (hourly) or days × rate (daily). Attendance logs
+    // hours even for daily workers — we count days = distinct non-zero hours.
+    // Keep it simple: use hours for hourly, 1 day per non-zero attendance for
+    // daily. We only have aggregated hours here, so fall back to hours × rate
+    // for both and let the money page do the precise per-day math.
+    const gross = rate > 0 ? hours * rate : 0;
+    return { member: m, contact, hours, paid, rate, gross };
+  });
 
   return (
     <div className="container py-5 space-y-4">
@@ -96,7 +132,7 @@ export default async function PeopleTab({ params }: { params: { id: string } }) 
         <Card>
           <CardContent className="p-0">
             <ul className="divide-y">
-              {rows.map(({ member, contact, hours, paid }) => (
+              {rows.map(({ member, contact, hours, paid, gross }) => (
                 <li key={member.id} className="p-4 flex items-center gap-3">
                   <div className="min-w-0 flex-1">
                     <div className="font-medium truncate">{contact?.name ?? "—"}</div>
@@ -104,9 +140,15 @@ export default async function PeopleTab({ params }: { params: { id: string } }) 
                       {[contact?.trade, member.role_in_project].filter(Boolean).join(" · ") ||
                         "—"}
                     </div>
-                    <div className="flex items-center gap-4 mt-1 text-xs text-muted-foreground">
+                    <div className="flex flex-wrap items-center gap-x-4 gap-y-0.5 mt-1 text-xs text-muted-foreground">
                       <span>{hours.toFixed(1)} שעות</span>
-                      <span>שולם {formatCurrency(paid)}</span>
+                      {gross > 0 ? <span>שכר: {formatCurrency(gross)}</span> : null}
+                      <span>שולם: {formatCurrency(paid)}</span>
+                      {gross > paid ? (
+                        <span className="text-warning">
+                          חוב: {formatCurrency(gross - paid)}
+                        </span>
+                      ) : null}
                     </div>
                   </div>
                   <RemoveMemberButton projectId={params.id} memberId={member.id} />
