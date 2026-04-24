@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { requireUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { formatCurrency, isoDate } from "@/lib/format";
@@ -24,6 +25,15 @@ export default async function DashboardPage() {
   const user = await requireUser();
   const supabase = createClient();
   const locale = await getUserLocale();
+
+  // First-run gate: never-onboarded users land on the welcome page so they
+  // see the setup checklist + demo-project button instead of an empty shell.
+  const { data: prof } = await supabase
+    .from("profiles")
+    .select("onboarding_completed_at")
+    .eq("id", user.id)
+    .maybeSingle();
+  if (!prof?.onboarding_completed_at) redirect("/app/welcome");
 
   const { data: projects } = await supabase
     .from("projects")

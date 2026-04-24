@@ -49,7 +49,7 @@ export default async function ContactsPage() {
           action={<ContactDialog trigger={<Button size="lg" className="tap">הוסף איש קשר ראשון</Button>} />}
         >
           עובדים, קבלני משנה וספקים — כל מי שאתה עובד מולו באתר. לקוחות מנוהלים
-          בעמוד נפרד תחת "לקוחות".
+          בעמוד נפרד תחת &quot;לקוחות&quot;.
         </EmptyState>
       ) : (
         <div className="space-y-5">
