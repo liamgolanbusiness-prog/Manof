@@ -23,6 +23,7 @@ import { INVOICE_TYPE_LABELS, type InvoiceType } from "@/lib/supabase/database.t
 import { acceptQuoteAction } from "./accept-quote/actions";
 import { approveChangeAction } from "./approve-change/actions";
 import { SignaturePad } from "./signature-pad";
+import { PortalSubmitButton } from "./submit-button";
 
 export const dynamic = "force-dynamic";
 
@@ -369,12 +370,7 @@ export default async function PortalPage({
                       <input type="hidden" name="token" value={params.token} />
                       <input type="hidden" name="change_id" value={c.id} />
                       <SignaturePad name="typed_name" signatureFieldName="signature_data_url" />
-                      <button
-                        type="submit"
-                        className="w-full rounded-xl bg-primary text-primary-foreground font-semibold h-11"
-                      >
-                        אני מאשר את השינוי
-                      </button>
+                      <PortalSubmitButton>אני מאשר את השינוי</PortalSubmitButton>
                     </form>
                   </details>
                 </li>
@@ -466,12 +462,7 @@ export default async function PortalPage({
                       <input type="hidden" name="token" value={params.token} />
                       <input type="hidden" name="quote_id" value={q.id} />
                       <SignaturePad name="typed_name" signatureFieldName="signature_data_url" />
-                      <button
-                        type="submit"
-                        className="w-full rounded-xl bg-primary text-primary-foreground font-semibold h-11"
-                      >
-                        אני מאשר את ההצעה
-                      </button>
+                      <PortalSubmitButton>אני מאשר את ההצעה</PortalSubmitButton>
                     </form>
                   </details>
                 </li>
