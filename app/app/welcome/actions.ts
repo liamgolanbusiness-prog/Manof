@@ -153,3 +153,16 @@ export async function skipOnboardingAction() {
   revalidatePath("/app");
   redirect("/app/projects/new");
 }
+
+// "Skip — I already know the app" link on the welcome page. Just flips the
+// onboarding flag so the dashboard stops redirecting them back here.
+export async function dismissWelcomeAction() {
+  const user = await requireUser();
+  const supabase = createClient();
+  await supabase
+    .from("profiles")
+    .update({ onboarding_completed_at: new Date().toISOString() })
+    .eq("id", user.id);
+  revalidatePath("/app");
+  redirect("/app");
+}

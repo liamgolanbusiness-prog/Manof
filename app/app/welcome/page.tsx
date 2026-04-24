@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { Building2, HardHat, Sparkles, PlusCircle, Settings as SettingsIcon, ArrowLeft } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { seedDemoProjectAction, skipOnboardingAction } from "./actions";
+import { dismissWelcomeAction, seedDemoProjectAction, skipOnboardingAction } from "./actions";
 import { WelcomeSubmitButton } from "./submit-button";
 
 export const metadata = { title: "ברוך הבא · אתר" };
@@ -94,12 +94,14 @@ export default async function WelcomePage() {
       </Card>
 
       <div className="text-center pt-4">
-        <Link
-          href="/app"
-          className="text-xs text-muted-foreground hover:text-primary hover:underline"
-        >
-          דלג — אני כבר מכיר, קח אותי ללוח הבקרה
-        </Link>
+        <form action={dismissWelcomeAction}>
+          <button
+            type="submit"
+            className="text-xs text-muted-foreground hover:text-primary hover:underline"
+          >
+            דלג — אני כבר מכיר, קח אותי ללוח הבקרה
+          </button>
+        </form>
       </div>
     </div>
   );
