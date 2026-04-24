@@ -36,10 +36,11 @@ export function SignupForm() {
           type="password"
           autoComplete="new-password"
           required
+          minLength={8}
           dir="ltr"
           className="text-start"
         />
-        <p className="text-xs text-muted-foreground">לפחות 6 תווים</p>
+        <p className="text-xs text-muted-foreground">לפחות 8 תווים</p>
       </div>
       {state?.error && (
         <div className="flex gap-2 items-start text-sm text-destructive bg-destructive/10 border border-destructive/30 rounded-lg p-2.5">
@@ -48,7 +49,7 @@ export function SignupForm() {
         </div>
       )}
       {state?.notice && (
-        <div className="flex gap-2 items-start text-sm text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg p-2.5">
+        <div className="flex gap-2 items-start text-sm text-success bg-success/10 border border-success/30 rounded-lg p-2.5">
           <MailCheck className="h-4 w-4 mt-0.5 shrink-0" />
           <span>{state.notice}</span>
         </div>

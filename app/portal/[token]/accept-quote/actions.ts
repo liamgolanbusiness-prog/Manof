@@ -40,7 +40,9 @@ export async function acceptQuoteAction(formData: FormData) {
   if (!quote || quote.type !== "quote" || quote.project_id !== project.id) {
     redirect(`/portal/${token}`);
   }
-  if (quote.status !== "issued" && quote.status !== "draft") {
+  if (quote.status !== "issued") {
+    // Already accepted/cancelled/expired, or still a draft — never acceptable
+    // from the portal. Drop quietly.
     redirect(`/portal/${token}`);
   }
 
@@ -50,7 +52,8 @@ export async function acceptQuoteAction(formData: FormData) {
       ? signatureRaw
       : null;
 
-  await supabase
+  // Double-click guard: only accept quotes still in 'issued' state.
+  const { data: updated } = await supabase
     .from("invoices")
     .update({
       status: "accepted",
@@ -58,7 +61,12 @@ export async function acceptQuoteAction(formData: FormData) {
       accepted_by_name: typedName.slice(0, 120),
       accepted_signature_url: signature,
     })
-    .eq("id", quoteId);
+    .eq("id", quoteId)
+    .eq("status", "issued")
+    .select("id");
+  if (!updated || updated.length === 0) {
+    redirect(`/portal/${token}?accepted=${quoteId}`);
+  }
 
   // Webhooks: quote.accepted → owner's subscribers. Need the owner's user_id.
   try {

@@ -182,9 +182,20 @@ export default async function DashboardPage() {
   const revenueDelta = revenueThisMonth - revenuePrevMonth;
   const revenuePctDelta =
     revenuePrevMonth > 0 ? Math.round((revenueDelta / revenuePrevMonth) * 100) : null;
+  const EXPENSE_CAT_LABELS: Record<string, string> = {
+    materials: "חומרים",
+    labor: "עבודה",
+    subcontractor: "קבלן משנה",
+    tools: "כלים",
+    transport: "הובלה",
+    permits: "רישוי",
+    rent: "שכ״ד ציוד",
+    other: "אחר",
+  };
   const topCats = Array.from(expenseByCat.entries())
     .sort((a, b) => b[1] - a[1])
-    .slice(0, 3);
+    .slice(0, 3)
+    .map(([cat, amt]) => [EXPENSE_CAT_LABELS[cat] ?? cat, amt] as const);
   const maxCat = topCats[0]?.[1] ?? 1;
   const maxWeek = Math.max(...weekBuckets.map((w) => Math.max(w.inflow, w.outflow)), 1);
 

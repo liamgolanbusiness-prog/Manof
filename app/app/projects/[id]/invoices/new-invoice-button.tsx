@@ -28,7 +28,14 @@ import { formatCurrency } from "@/lib/format";
 import { Loader2, Plus, Trash2 } from "lucide-react";
 import { createInvoiceAction } from "./actions";
 
-type ClientContact = { id: string; name: string; phone: string | null };
+type ClientContact = {
+  id: string;
+  name: string;
+  phone: string | null;
+  email?: string | null;
+  tax_id?: string | null;
+  billing_address?: string | null;
+};
 
 type Line = {
   key: string;
@@ -129,6 +136,9 @@ export function NewInvoiceButton({
     if (c) {
       setClientName(c.name);
       if (c.phone) setClientPhone(c.phone);
+      if (c.email) setClientEmail(c.email);
+      if (c.tax_id) setClientTaxId(c.tax_id);
+      if (c.billing_address) setClientAddress(c.billing_address);
     }
   }
 
@@ -205,7 +215,7 @@ export function NewInvoiceButton({
             <div className="text-xs font-semibold text-muted-foreground">פרטי לקוח</div>
             {clients.length > 0 ? (
               <div className="space-y-1.5">
-                <Label>בחירה מאנשי קשר</Label>
+                <Label>בחירה מרשימת הלקוחות</Label>
                 <Select onValueChange={onClientPick}>
                   <SelectTrigger>
                     <SelectValue placeholder="-- בחר --" />

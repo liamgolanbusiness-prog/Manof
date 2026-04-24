@@ -11,13 +11,27 @@ export async function seedDemoProjectAction() {
   const user = await requireUser();
   const supabase = createClient();
 
+  // Demo client lives in the dedicated clients table now.
+  const { data: demoClient } = await supabase
+    .from("clients")
+    .insert({
+      user_id: user.id,
+      name: "לקוח דוגמה",
+      phone: null,
+      email: "demo@example.com",
+    })
+    .select("id, name, phone")
+    .single();
+
   const { data: project, error: pErr } = await supabase
     .from("projects")
     .insert({
       user_id: user.id,
       name: "שיפוץ דירה לדוגמה",
       address: "רח׳ הגליל 12, תל אביב",
-      client_name: "לקוח דוגמה",
+      client_id: demoClient?.id ?? null,
+      client_name: demoClient?.name ?? "לקוח דוגמה",
+      client_phone: demoClient?.phone ?? null,
       start_date: new Date(Date.now() - 30 * 86400_000).toISOString().slice(0, 10),
       target_end_date: new Date(Date.now() + 45 * 86400_000).toISOString().slice(0, 10),
       contract_value: 180000,
@@ -28,13 +42,12 @@ export async function seedDemoProjectAction() {
     .single();
   if (pErr || !project) throw new Error(pErr?.message ?? "demo seed failed");
 
-  // A couple of contacts
+  // Workers / suppliers only — no 'client' role (clients have their own table).
   const { data: workers } = await supabase
     .from("contacts")
     .insert([
       { user_id: user.id, name: "דני העובד", role: "worker", trade: "טייח", pay_rate: 350, pay_type: "daily" },
       { user_id: user.id, name: "ספק חומרי בניין", role: "supplier", trade: "חומרי בניין" },
-      { user_id: user.id, name: "לקוח דוגמה", role: "client" },
     ])
     .select("id, role");
 

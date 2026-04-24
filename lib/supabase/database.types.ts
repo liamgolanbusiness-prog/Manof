@@ -1007,7 +1007,7 @@ export type Task = Database["public"]["Tables"]["tasks"]["Row"];
 export type TaskInsert = Database["public"]["Tables"]["tasks"]["Insert"];
 
 // Known enum-ish strings (kept loose; DB columns are plain text)
-export const CONTACT_ROLES = ["worker", "supplier", "subcontractor", "client", "other"] as const;
+export const CONTACT_ROLES = ["worker", "supplier", "subcontractor", "other"] as const;
 export type ContactRole = (typeof CONTACT_ROLES)[number];
 
 export const PROJECT_STATUSES = ["active", "paused", "done", "archived"] as const;

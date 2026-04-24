@@ -1,11 +1,31 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Search as SearchIcon, Building2, User, Wallet, BookOpen, ListTodo, FileText } from "lucide-react";
+import {
+  Search as SearchIcon,
+  Building2,
+  User,
+  UsersRound,
+  Wallet,
+  BookOpen,
+  ListTodo,
+  FileText,
+} from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { requireUser } from "@/lib/auth";
 import { formatCurrency, formatDateShort } from "@/lib/format";
 import { formatIsraeliPhone } from "@/lib/phone";
 import { INVOICE_TYPE_LABELS, type InvoiceType } from "@/lib/supabase/database.types";
+
+const EXPENSE_CAT_LABELS: Record<string, string> = {
+  materials: "חומרים",
+  labor: "עבודה",
+  subcontractor: "קבלן משנה",
+  tools: "כלים",
+  transport: "הובלה",
+  permits: "רישוי",
+  rent: "שכ״ד ציוד",
+  other: "אחר",
+};
 
 export const metadata = { title: "חיפוש · אתר" };
 
@@ -45,7 +65,7 @@ async function Results({ q }: { q: string }) {
   const supabase = createClient();
   const pattern = `%${q.replace(/[%_]/g, "")}%`;
 
-  const [projects, contacts, expenses, reports, invoices, tasks] = await Promise.all([
+  const [projects, contacts, clients, expenses, reports, invoices, tasks] = await Promise.all([
     supabase
       .from("projects")
       .select("id, name, client_name, address, status")
@@ -55,6 +75,11 @@ async function Results({ q }: { q: string }) {
       .from("contacts")
       .select("id, name, phone, role, trade")
       .or(`name.ilike.${pattern},phone.ilike.${pattern},trade.ilike.${pattern}`)
+      .limit(10),
+    supabase
+      .from("clients")
+      .select("id, name, phone, email")
+      .or(`name.ilike.${pattern},phone.ilike.${pattern},email.ilike.${pattern}`)
       .limit(10),
     supabase
       .from("expenses")
@@ -81,6 +106,7 @@ async function Results({ q }: { q: string }) {
   const anyHit =
     (projects.data?.length ?? 0) +
       (contacts.data?.length ?? 0) +
+      (clients.data?.length ?? 0) +
       (expenses.data?.length ?? 0) +
       (reports.data?.length ?? 0) +
       (invoices.data?.length ?? 0) +
@@ -108,6 +134,25 @@ async function Results({ q }: { q: string }) {
               <div className="font-medium">{p.name}</div>
               <div className="text-xs text-muted-foreground">
                 {[p.client_name, p.address].filter(Boolean).join(" · ")}
+              </div>
+            </Link>
+          ))}
+        </Section>
+      ) : null}
+
+      {clients.data && clients.data.length > 0 ? (
+        <Section icon={UsersRound} title="לקוחות">
+          {clients.data.map((c) => (
+            <Link
+              key={c.id}
+              href="/app/clients"
+              className="block rounded-xl border bg-card px-3 py-2 hover:bg-muted/50"
+            >
+              <div className="font-medium">{c.name}</div>
+              <div className="text-xs text-muted-foreground">
+                {[c.phone ? formatIsraeliPhone(c.phone) : null, c.email]
+                  .filter(Boolean)
+                  .join(" · ")}
               </div>
             </Link>
           ))}
@@ -169,7 +214,7 @@ async function Results({ q }: { q: string }) {
               className="block rounded-xl border bg-card px-3 py-2 hover:bg-muted/50"
             >
               <div className="flex items-center justify-between">
-                <span className="font-medium">{e.category}</span>
+                <span className="font-medium">{EXPENSE_CAT_LABELS[e.category] ?? e.category}</span>
                 <span className="text-sm font-bold" dir="ltr">
                   {formatCurrency(Number(e.amount))}
                 </span>

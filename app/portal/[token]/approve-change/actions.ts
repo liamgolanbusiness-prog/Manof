@@ -51,7 +51,10 @@ export async function approveChangeAction(formData: FormData) {
       ? signatureRaw
       : null;
 
-  await ctx.supabase
+  // Guard against double-click: only update if still pending. Returning rows
+  // lets us detect the race — if the first click already flipped status, the
+  // second one finds zero rows and we skip the webhook + redirect cleanly.
+  const { data: updated } = await ctx.supabase
     .from("change_orders")
     .update({
       status: "approved",
@@ -59,7 +62,12 @@ export async function approveChangeAction(formData: FormData) {
       signed_at: new Date().toISOString(),
       signed_signature_url: signature,
     })
-    .eq("id", changeId);
+    .eq("id", changeId)
+    .eq("status", "pending")
+    .select("id");
+  if (!updated || updated.length === 0) {
+    redirect(`/portal/${token}?change_approved=${changeId}`);
+  }
 
   const { data: owner } = await ctx.supabase
     .from("projects")

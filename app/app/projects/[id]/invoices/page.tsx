@@ -25,11 +25,11 @@ export default async function InvoicesTab({
   const user = await requireUser();
   const supabase = createClient();
 
-  const [{ data: project }, { data: profile }, { data: contacts }, { data: invoices }] =
+  const [{ data: project }, { data: profile }, { data: clients }, { data: invoices }] =
     await Promise.all([
       supabase
         .from("projects")
-        .select("id, name, client_name, client_phone, contract_value")
+        .select("id, name, client_id, client_name, client_phone, contract_value")
         .eq("id", params.id)
         .eq("user_id", user.id)
         .maybeSingle(),
@@ -41,10 +41,9 @@ export default async function InvoicesTab({
         .eq("id", user.id)
         .maybeSingle(),
       supabase
-        .from("contacts")
-        .select("id, name, phone, role")
+        .from("clients")
+        .select("id, name, phone, email, tax_id, billing_address")
         .eq("user_id", user.id)
-        .eq("role", "client")
         .order("name"),
       supabase
         .from("invoices")
@@ -87,7 +86,7 @@ export default async function InvoicesTab({
           defaultVatRate={Number(profile?.vat_rate ?? 18)}
           defaultVatIncluded={!!profile?.vat_included}
           defaultFooter={profile?.invoice_footer ?? ""}
-          clients={contacts ?? []}
+          clients={clients ?? []}
         />
         </div>
       </div>
