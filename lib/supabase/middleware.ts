@@ -39,12 +39,24 @@ export async function updateSession(request: NextRequest) {
 
   const { pathname } = request.nextUrl;
 
+  // Helper: when we redirect we MUST carry over any cookies the supabase
+  // client wrote during getSession (token refresh). Otherwise the browser
+  // never gets the new tokens, the next request comes in with the same
+  // expired ones, middleware refreshes again → infinite loop.
+  function redirectWithCookies(url: URL) {
+    const res = NextResponse.redirect(url);
+    for (const c of supabaseResponse.cookies.getAll()) {
+      res.cookies.set(c.name, c.value, c);
+    }
+    return res;
+  }
+
   // Guard /app/* — must be signed in
   if (pathname.startsWith("/app") && !user) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     url.searchParams.set("next", pathname);
-    return NextResponse.redirect(url);
+    return redirectWithCookies(url);
   }
 
   // Bounce authed users away from /login, /signup
@@ -52,7 +64,7 @@ export async function updateSession(request: NextRequest) {
     const url = request.nextUrl.clone();
     url.pathname = "/app";
     url.searchParams.delete("next");
-    return NextResponse.redirect(url);
+    return redirectWithCookies(url);
   }
 
   return supabaseResponse;
