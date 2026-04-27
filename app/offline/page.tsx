@@ -2,7 +2,10 @@ import { WifiOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 
-export const dynamic = "force-static";
+// Was force-static, but the static prerender in Docker builds (no Supabase
+// env vars at build time) was failing because the layout chain pulls in code
+// that calls createServerClient at module init.
+export const dynamic = "force-dynamic";
 
 export default function OfflinePage() {
   return (
