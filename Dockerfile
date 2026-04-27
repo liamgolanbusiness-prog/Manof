@@ -47,13 +47,11 @@ WORKDIR /app
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 
-# Bring in just what `next start` needs.
+# Standalone output mode bundles a minimal Node server with only the deps it
+# needs. This is the recommended Docker pattern for Next.js 14+.
 COPY --from=builder /app/public ./public
-COPY --from=builder /app/.next ./.next
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/package.json ./package.json
-COPY --from=builder /app/next.config.mjs ./next.config.mjs
+COPY --from=builder /app/.next/standalone ./
+COPY --from=builder /app/.next/static ./.next/static
 
-# Railway injects PORT dynamically; next start reads it.
 EXPOSE 3000
-CMD ["npm", "start"]
+CMD ["node", "server.js"]
