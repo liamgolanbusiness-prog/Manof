@@ -11,18 +11,26 @@ export default async function SettingsPage({ params }: { params: { id: string } 
   const { data: project } = await supabase
     .from("projects")
     .select(
-      "id, name, address, client_id, client_name, client_phone, contract_value, start_date, target_end_date, status, progress_pct"
+      "id, name, address, client_id, client_name, client_phone, contract_value, start_date, target_end_date, status, progress_pct, foreman_contact_id"
     )
     .eq("id", params.id)
     .eq("user_id", user.id)
     .maybeSingle();
   if (!project) notFound();
 
-  const { data: clients } = await supabase
-    .from("clients")
-    .select("id, name, phone, email, tax_id, billing_address, notes")
-    .eq("user_id", user.id)
-    .order("name", { ascending: true });
+  const [{ data: clients }, { data: foremen }] = await Promise.all([
+    supabase
+      .from("clients")
+      .select("id, name, phone, email, tax_id, billing_address, notes")
+      .eq("user_id", user.id)
+      .order("name", { ascending: true }),
+    supabase
+      .from("contacts")
+      .select("id, name")
+      .eq("user_id", user.id)
+      .eq("role", "foreman")
+      .order("name", { ascending: true }),
+  ]);
 
   // Load collaborators with email fallback (invited_email for pending, auth.users.email for accepted).
   const { data: collabRows } = await supabase
@@ -68,7 +76,7 @@ export default async function SettingsPage({ params }: { params: { id: string } 
           <CardTitle>הגדרות פרויקט</CardTitle>
         </CardHeader>
         <CardContent>
-          <SettingsForm project={project} clients={clients ?? []} />
+          <SettingsForm project={project} clients={clients ?? []} foremen={foremen ?? []} />
         </CardContent>
       </Card>
 

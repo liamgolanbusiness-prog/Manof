@@ -86,7 +86,7 @@ async function issueFromTemplate(
     .select("invoice_prefix")
     .eq("id", tpl.user_id)
     .maybeSingle();
-  const year = new Date(tpl.next_issue_date).getFullYear();
+  const year = Number(String(tpl.next_issue_date).slice(0, 4));
   const doc_number = formatInvoiceNumber(
     tpl.type as InvoiceType,
     Number(numInt),

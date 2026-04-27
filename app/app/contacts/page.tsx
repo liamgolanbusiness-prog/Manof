@@ -9,6 +9,7 @@ import { formatIsraeliPhone } from "@/lib/phone";
 
 const ROLE_LABELS: Record<string, string> = {
   worker: "עובד",
+  foreman: "מנהל עבודה",
   subcontractor: "קבלן משנה",
   supplier: "ספק",
   other: "אחר",
@@ -31,7 +32,7 @@ export default async function ContactsPage() {
     const k = c.role || "other";
     (groups[k] ??= []).push(c);
   }
-  const orderedKeys = ["worker", "subcontractor", "supplier", "other"].filter(
+  const orderedKeys = ["foreman", "worker", "subcontractor", "supplier", "other"].filter(
     (k) => groups[k]
   );
 

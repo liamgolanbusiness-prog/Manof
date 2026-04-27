@@ -104,7 +104,10 @@ export async function createInvoiceAction(input: {
     .select("invoice_prefix, business_name, tax_id, city, address, email, phone, invoice_footer")
     .eq("id", user.id)
     .maybeSingle();
-  const year = new Date(input.issue_date).getFullYear();
+  // Parse the year directly from the YYYY-MM-DD string. Going through
+  // `new Date(...)` interprets the string as UTC midnight, which flips the
+  // year for late-December dates when converted back to Israel time.
+  const year = Number(String(input.issue_date).slice(0, 4));
   const doc_number = formatInvoiceNumber(
     input.type,
     numberInt,

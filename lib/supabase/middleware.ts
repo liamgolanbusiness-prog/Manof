@@ -26,10 +26,16 @@ export async function updateSession(request: NextRequest) {
     }
   );
 
-  // Refresh the session; this mutates cookies on the response.
+  // Cookie-only check — getSession reads from cookies without hitting the
+  // Supabase auth server (getUser does a full network round-trip on every
+  // nav, which adds 200-500ms even Frankfurt→Frankfurt). For middleware
+  // routing this is safe: RLS validates the real JWT on every data query,
+  // so a forged cookie still can't read other users' data — it would just
+  // pass the redirect gate and then get empty results.
   const {
-    data: { user },
-  } = await supabase.auth.getUser();
+    data: { session },
+  } = await supabase.auth.getSession();
+  const user = session?.user ?? null;
 
   const { pathname } = request.nextUrl;
 

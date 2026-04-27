@@ -55,6 +55,7 @@ export async function createExpense(input: {
   });
   if (error) throw new Error(error.message);
   revalidatePath(`/app/projects/${input.projectId}/money`);
+  revalidatePath("/app");
 }
 
 export async function deleteExpense(projectId: string, id: string) {
@@ -66,6 +67,7 @@ export async function deleteExpense(projectId: string, id: string) {
     .eq("project_id", projectId);
   if (error) throw new Error(error.message);
   revalidatePath(`/app/projects/${projectId}/money`);
+  revalidatePath("/app");
 }
 
 export async function createPayment(input: {
@@ -106,6 +108,7 @@ export async function createPayment(input: {
     }).catch(() => {});
   }
   revalidatePath(`/app/projects/${input.projectId}/money`);
+  revalidatePath("/app");
 }
 
 export async function deletePayment(projectId: string, id: string) {
@@ -117,6 +120,7 @@ export async function deletePayment(projectId: string, id: string) {
     .eq("project_id", projectId);
   if (error) throw new Error(error.message);
   revalidatePath(`/app/projects/${projectId}/money`);
+  revalidatePath("/app");
 }
 
 export async function markExpensePaid(

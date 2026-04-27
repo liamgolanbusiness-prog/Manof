@@ -132,6 +132,7 @@ export interface Database {
           portal_last_viewed_at: Timestamp | null;
           portal_view_count: number | null;
           progress_pct: number | null;
+          foreman_contact_id: string | null;
           created_at: Timestamp | null;
           updated_at: Timestamp | null;
         };
@@ -155,6 +156,7 @@ export interface Database {
           portal_last_viewed_at?: Timestamp | null;
           portal_view_count?: number | null;
           progress_pct?: number | null;
+          foreman_contact_id?: string | null;
           created_at?: Timestamp | null;
           updated_at?: Timestamp | null;
         };
@@ -178,6 +180,7 @@ export interface Database {
           portal_last_viewed_at?: Timestamp | null;
           portal_view_count?: number | null;
           progress_pct?: number | null;
+          foreman_contact_id?: string | null;
           created_at?: Timestamp | null;
           updated_at?: Timestamp | null;
         };
@@ -422,6 +425,8 @@ export interface Database {
           notes: string | null;
           voice_note_url: string | null;
           locked: boolean | null;
+          foreman_contact_id: string | null;
+          foreman_on_site: boolean | null;
           created_at: Timestamp | null;
           updated_at: Timestamp | null;
         };
@@ -434,6 +439,8 @@ export interface Database {
           notes?: string | null;
           voice_note_url?: string | null;
           locked?: boolean | null;
+          foreman_contact_id?: string | null;
+          foreman_on_site?: boolean | null;
           created_at?: Timestamp | null;
           updated_at?: Timestamp | null;
         };
@@ -446,6 +453,44 @@ export interface Database {
           notes?: string | null;
           voice_note_url?: string | null;
           locked?: boolean | null;
+          foreman_contact_id?: string | null;
+          foreman_on_site?: boolean | null;
+          created_at?: Timestamp | null;
+          updated_at?: Timestamp | null;
+        };
+        Relationships: [];
+      };
+      project_milestones: {
+        Row: {
+          id: string;
+          project_id: string;
+          name: string;
+          planned_date: ISODate | null;
+          actual_date: ISODate | null;
+          done: boolean | null;
+          position: number | null;
+          created_at: Timestamp | null;
+          updated_at: Timestamp | null;
+        };
+        Insert: {
+          id?: string;
+          project_id: string;
+          name: string;
+          planned_date?: ISODate | null;
+          actual_date?: ISODate | null;
+          done?: boolean | null;
+          position?: number | null;
+          created_at?: Timestamp | null;
+          updated_at?: Timestamp | null;
+        };
+        Update: {
+          id?: string;
+          project_id?: string;
+          name?: string;
+          planned_date?: ISODate | null;
+          actual_date?: ISODate | null;
+          done?: boolean | null;
+          position?: number | null;
           created_at?: Timestamp | null;
           updated_at?: Timestamp | null;
         };
@@ -1005,10 +1050,19 @@ export type WorkerPayment = Database["public"]["Tables"]["worker_payments"]["Row
 export type WorkerPaymentInsert = Database["public"]["Tables"]["worker_payments"]["Insert"];
 export type Task = Database["public"]["Tables"]["tasks"]["Row"];
 export type TaskInsert = Database["public"]["Tables"]["tasks"]["Insert"];
+export type ProjectMilestone = Database["public"]["Tables"]["project_milestones"]["Row"];
+export type ProjectMilestoneInsert = Database["public"]["Tables"]["project_milestones"]["Insert"];
 
 // Known enum-ish strings (kept loose; DB columns are plain text)
-export const CONTACT_ROLES = ["worker", "supplier", "subcontractor", "other"] as const;
+export const CONTACT_ROLES = ["worker", "supplier", "subcontractor", "foreman", "other"] as const;
 export type ContactRole = (typeof CONTACT_ROLES)[number];
+export const CONTACT_ROLE_LABELS: Record<ContactRole, string> = {
+  worker: "עובד",
+  subcontractor: "קבלן משנה",
+  supplier: "ספק",
+  foreman: "מנהל עבודה",
+  other: "אחר",
+};
 
 export const PROJECT_STATUSES = ["active", "paused", "done", "archived"] as const;
 export type ProjectStatus = (typeof PROJECT_STATUSES)[number];

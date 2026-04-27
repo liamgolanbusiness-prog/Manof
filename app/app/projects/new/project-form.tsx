@@ -17,17 +17,26 @@ import { createProjectAction, type ProjectFormState } from "../actions";
 import { ClientDialog } from "@/app/app/clients/client-dialog";
 
 type ClientOption = { id: string; name: string };
+type ForemanOption = { id: string; name: string };
 
-export function ProjectForm({ clients }: { clients: ClientOption[] }) {
+export function ProjectForm({
+  clients,
+  foremen,
+}: {
+  clients: ClientOption[];
+  foremen: ForemanOption[];
+}) {
   const [state, action] = useFormState<ProjectFormState, FormData>(
     createProjectAction,
     null
   );
   const [clientId, setClientId] = useState("");
+  const [foremanId, setForemanId] = useState("");
 
   return (
     <form action={action} className="space-y-4">
       <input type="hidden" name="client_id" value={clientId} />
+      <input type="hidden" name="foreman_contact_id" value={foremanId} />
       <Field label="שם הפרויקט" name="name" required placeholder='דוגמה: דירה חדשה ברחוב רמב"ם 7' />
       <Field
         label="כתובת"
@@ -65,6 +74,27 @@ export function ProjectForm({ clients }: { clients: ClientOption[] }) {
             }
           />
         </div>
+      </div>
+      <div className="space-y-1.5">
+        <Label>מנהל עבודה</Label>
+        <Select value={foremanId} onValueChange={setForemanId}>
+          <SelectTrigger>
+            <SelectValue placeholder="בחר מנהל עבודה (אופציונלי)" />
+          </SelectTrigger>
+          <SelectContent>
+            {foremen.length === 0 ? (
+              <SelectItem value="none" disabled>
+                אין מנהלי עבודה — הוסף איש קשר עם תפקיד &quot;מנהל עבודה&quot;
+              </SelectItem>
+            ) : (
+              foremen.map((f) => (
+                <SelectItem key={f.id} value={f.id}>
+                  {f.name}
+                </SelectItem>
+              ))
+            )}
+          </SelectContent>
+        </Select>
       </div>
       <div className="grid grid-cols-2 gap-3">
         <Field label="תאריך התחלה" name="start_date" type="date" />

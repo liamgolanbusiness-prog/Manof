@@ -127,6 +127,7 @@ export function ContactDialog({
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="worker">עובד</SelectItem>
+                  <SelectItem value="foreman">מנהל עבודה</SelectItem>
                   <SelectItem value="subcontractor">קבלן משנה</SelectItem>
                   <SelectItem value="supplier">ספק</SelectItem>
                   <SelectItem value="other">אחר</SelectItem>
@@ -155,7 +156,7 @@ export function ContactDialog({
               onChange={(e) => setTrade(e.target.value)}
             />
           </div>
-          {(role === "worker" || role === "subcontractor") ? (
+          {(role === "worker" || role === "subcontractor" || role === "foreman") ? (
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <Label htmlFor="c-rate">תעריף (₪)</Label>
@@ -176,6 +177,7 @@ export function ContactDialog({
                   <SelectContent>
                     <SelectItem value="hourly">שעתי</SelectItem>
                     <SelectItem value="daily">יומי</SelectItem>
+                    <SelectItem value="monthly">חודשי</SelectItem>
                     <SelectItem value="fixed">קבוע לפרויקט</SelectItem>
                   </SelectContent>
                 </Select>

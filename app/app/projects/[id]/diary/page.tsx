@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { BookOpen, Camera, Users, AlertTriangle, Lock } from "lucide-react";
+import { BookOpen, Camera, Users, AlertTriangle, Lock, HardHat } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { requireUser } from "@/lib/auth";
 import { EmptyState } from "@/components/empty-state";
@@ -19,7 +19,7 @@ export default async function DiaryPage({ params }: { params: { id: string } }) 
 
   const { data: reports } = await supabase
     .from("daily_reports")
-    .select("id, report_date, notes, locked, updated_at")
+    .select("id, report_date, notes, locked, updated_at, foreman_contact_id, foreman_on_site")
     .eq("project_id", params.id)
     .order("report_date", { ascending: false })
     .limit(200);
@@ -36,11 +36,18 @@ export default async function DiaryPage({ params }: { params: { id: string } }) 
   }
 
   const ids = list.map((r) => r.id);
-  const [atRes, phRes, isRes] = await Promise.all([
+  const foremanIds = Array.from(
+    new Set(list.map((r) => r.foreman_contact_id).filter((x): x is string => !!x))
+  );
+  const [atRes, phRes, isRes, fmRes] = await Promise.all([
     supabase.from("attendance").select("daily_report_id, hours_worked").in("daily_report_id", ids),
     supabase.from("report_photos").select("daily_report_id").in("daily_report_id", ids),
     supabase.from("issues").select("source_report_id, status").in("source_report_id", ids),
+    foremanIds.length
+      ? supabase.from("contacts").select("id, name").in("id", foremanIds)
+      : Promise.resolve({ data: [] as { id: string; name: string }[] }),
   ]);
+  const foremanById = new Map((fmRes.data ?? []).map((c) => [c.id, c.name]));
 
   const attCount = new Map<string, number>();
   for (const a of atRes.data ?? []) {
@@ -101,7 +108,7 @@ export default async function DiaryPage({ params }: { params: { id: string } }) 
                     )}
                   </div>
                 </div>
-                <div className="flex items-center gap-3 mt-3 text-xs text-muted-foreground">
+                <div className="flex items-center gap-3 mt-3 text-xs text-muted-foreground flex-wrap">
                   <span className="inline-flex items-center gap-1">
                     <Users className="h-3.5 w-3.5" /> {att}
                   </span>
@@ -112,6 +119,13 @@ export default async function DiaryPage({ params }: { params: { id: string } }) 
                     <span className="inline-flex items-center gap-1">
                       <AlertTriangle className="h-3.5 w-3.5" />
                       {is.open}/{is.total}
+                    </span>
+                  ) : null}
+                  {r.foreman_contact_id && foremanById.has(r.foreman_contact_id) ? (
+                    <span className="inline-flex items-center gap-1">
+                      <HardHat className="h-3.5 w-3.5" />
+                      {foremanById.get(r.foreman_contact_id)}
+                      {r.foreman_on_site === false ? " · לא הגיע" : ""}
                     </span>
                   ) : null}
                 </div>

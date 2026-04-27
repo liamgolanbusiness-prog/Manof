@@ -79,32 +79,36 @@ export function InvoiceList({
         return (
           <li
             key={inv.id}
-            className="rounded-xl border bg-card p-3 flex flex-wrap items-center gap-3"
+            className="rounded-xl border bg-card p-3 space-y-2"
           >
-            <div className="flex-shrink-0 h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
-              <FileText className="h-5 w-5 text-primary" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 text-sm">
-                <span className="font-semibold">{INVOICE_TYPE_LABELS[type]}</span>
-                <span className="text-muted-foreground font-mono text-xs" dir="ltr">
-                  {inv.doc_number}
-                </span>
+            <div className="flex items-start gap-3">
+              <div className="flex-shrink-0 h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                <FileText className="h-5 w-5 text-primary" />
               </div>
-              <div className="text-xs text-muted-foreground truncate">
-                {inv.client_name} · {formatDateShort(inv.issue_date)}
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 text-sm flex-wrap">
+                  <span className="font-semibold">{INVOICE_TYPE_LABELS[type]}</span>
+                  <span className="text-muted-foreground font-mono text-xs" dir="ltr">
+                    {inv.doc_number}
+                  </span>
+                  <span className={`text-xs ${statusTone}`}>
+                    · {INVOICE_STATUS_LABELS[status] ?? status}
+                  </span>
+                </div>
+                <div className="text-xs text-muted-foreground truncate">
+                  {inv.client_name} · {formatDateShort(inv.issue_date)}
+                </div>
+              </div>
+              <div className="text-end shrink-0">
+                <div className="font-bold whitespace-nowrap">{formatCurrency(Number(inv.total))}</div>
+                {status === "issued" && unpaid > 0 ? (
+                  <div className="text-xs text-muted-foreground whitespace-nowrap">
+                    יתרה {formatCurrency(unpaid)}
+                  </div>
+                ) : null}
               </div>
             </div>
-            <div className="text-end">
-              <div className="font-bold">{formatCurrency(Number(inv.total))}</div>
-              <div className={`text-xs ${statusTone}`}>
-                {INVOICE_STATUS_LABELS[status] ?? status}
-                {status === "issued" && unpaid > 0
-                  ? ` · יתרה ${formatCurrency(unpaid)}`
-                  : null}
-              </div>
-            </div>
-            <div className="flex items-center gap-1 w-full sm:w-auto justify-end">
+            <div className="flex items-center gap-1 justify-end flex-wrap">
               <a
                 href={`/api/invoices/${inv.id}/pdf`}
                 target="_blank"
