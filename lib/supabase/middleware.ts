@@ -39,13 +39,27 @@ export async function updateSession(request: NextRequest) {
 
   const { pathname } = request.nextUrl;
 
+  // Behind Railway's proxy, request.url comes in as http://...:8080. If we
+  // redirect to that, the browser receives Location: http:// and either
+  // (a) follows to plain http and loses Secure cookies, or (b) the host
+  // doesn't match the public domain at all → cookies are scoped wrong and
+  // the next request looks unauthenticated → /login ↔ /app loop.
+  //
+  // Trust X-Forwarded-Proto/Host (set by Railway) and fall back to the
+  // configured public URL.
+  const fwdProto = request.headers.get("x-forwarded-proto");
+  const fwdHost = request.headers.get("x-forwarded-host") ?? request.headers.get("host");
+  const publicOrigin = (() => {
+    if (fwdProto && fwdHost) return `${fwdProto}://${fwdHost}`;
+    if (process.env.NEXT_PUBLIC_APP_URL) return process.env.NEXT_PUBLIC_APP_URL.replace(/\/$/, "");
+    return request.nextUrl.origin;
+  })();
+
   // For redirects, reuse `supabaseResponse` so every header/cookie that
-  // @supabase/ssr wrote during getSession() survives the hop. Building a
-  // fresh `NextResponse.redirect(...)` here would drop them — the browser
-  // would never receive refreshed tokens and the next request comes in
-  // with the same near-expired ones → infinite redirect loop.
-  function redirectVia(url: URL) {
-    return NextResponse.redirect(url, {
+  // @supabase/ssr wrote during getSession() survives the hop.
+  function redirectVia(target: { pathname: string; search: string }) {
+    const absolute = new URL(target.pathname + target.search, publicOrigin);
+    return NextResponse.redirect(absolute, {
       status: 307,
       headers: supabaseResponse.headers,
     });
@@ -53,18 +67,12 @@ export async function updateSession(request: NextRequest) {
 
   // Guard /app/* — must be signed in
   if (pathname.startsWith("/app") && !user) {
-    const url = request.nextUrl.clone();
-    url.pathname = "/login";
-    url.searchParams.set("next", pathname);
-    return redirectVia(url);
+    return redirectVia({ pathname: "/login", search: `?next=${encodeURIComponent(pathname)}` });
   }
 
   // Bounce authed users away from /login, /signup
   if ((pathname === "/login" || pathname === "/signup") && user) {
-    const url = request.nextUrl.clone();
-    url.pathname = "/app";
-    url.searchParams.delete("next");
-    return redirectVia(url);
+    return redirectVia({ pathname: "/app", search: "" });
   }
 
   return supabaseResponse;
