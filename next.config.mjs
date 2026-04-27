@@ -66,7 +66,6 @@ const nextConfig = {
   images: {
     remotePatterns: [{ protocol: "https", hostname: "*.supabase.co" }],
   },
-  output: "standalone",
   experimental: {
     serverActions: { bodySizeLimit: "25mb" },
   },
