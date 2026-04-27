@@ -55,6 +55,9 @@ export async function createProjectAction(
     client_phone = cli.phone;
   }
 
+  const foreman_contact_id =
+    String(formData.get("foreman_contact_id") ?? "").trim() || null;
+
   const insert = {
     user_id: user.id,
     name,
@@ -62,6 +65,7 @@ export async function createProjectAction(
     client_id,
     client_name,
     client_phone,
+    foreman_contact_id,
     contract_value: parseAmount(formData.get("contract_value")),
     start_date: parseDate(formData.get("start_date")),
     target_end_date: parseDate(formData.get("target_end_date")),

@@ -82,7 +82,15 @@ export function NewInvoiceButton({
   const [clientTaxId, setClientTaxId] = useState("");
   const [clientEmail, setClientEmail] = useState("");
   const [clientAddress, setClientAddress] = useState("");
-  const [issueDate, setIssueDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const [issueDate, setIssueDate] = useState(() => {
+    // Local date — toISOString() is UTC and rolls over to "tomorrow" after
+    // ~21:00 Israel time, which shows the wrong default in the date picker.
+    const d = new Date();
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${y}-${m}-${day}`;
+  });
   const [dueDate, setDueDate] = useState("");
   const [validUntil, setValidUntil] = useState("");
   const [vatRate, setVatRate] = useState(String(defaultVatRate));

@@ -13,11 +13,13 @@ import {
   FileText,
   FileEdit,
   Package,
+  CalendarRange,
 } from "lucide-react";
 
 const TABS = [
   { key: "today", label: "היום", icon: CalendarDays },
   { key: "diary", label: "יומן", icon: BookOpen },
+  { key: "schedule", label: "לוח זמנים", icon: CalendarRange },
   { key: "money", label: "כסף", icon: Wallet },
   { key: "invoices", label: "חשבוניות", icon: FileText },
   { key: "changes", label: "שינויי חוזה", icon: FileEdit },
@@ -31,7 +33,7 @@ export function ProjectTabs({ projectId }: { projectId: string }) {
   const pathname = usePathname();
   return (
     <nav
-      className="flex overflow-x-auto no-scrollbar -mx-4 px-4 gap-1"
+      className="flex overflow-x-auto -mx-4 px-4 gap-1"
       aria-label="ניווט פרויקט"
     >
       {TABS.map((t) => {
@@ -43,7 +45,7 @@ export function ProjectTabs({ projectId }: { projectId: string }) {
             key={t.key}
             href={href}
             className={cn(
-              "flex items-center gap-1.5 px-3 py-3 text-sm font-medium border-b-2 whitespace-nowrap tap",
+              "flex shrink-0 items-center gap-1.5 px-3 py-3 text-sm font-medium border-b-2 whitespace-nowrap tap",
               active
                 ? "border-primary text-primary"
                 : "border-transparent text-muted-foreground hover:text-foreground"

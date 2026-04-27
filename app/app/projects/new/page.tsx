@@ -9,7 +9,7 @@ import { createClient } from "@/lib/supabase/server";
 export default async function NewProjectPage() {
   const user = await requireUser();
   const supabase = createClient();
-  const [{ data: sources }, { data: clients }] = await Promise.all([
+  const [{ data: sources }, { data: clients }, { data: foremen }] = await Promise.all([
     supabase
       .from("projects")
       .select("id, name")
@@ -20,6 +20,12 @@ export default async function NewProjectPage() {
       .from("clients")
       .select("id, name")
       .eq("user_id", user.id)
+      .order("name", { ascending: true }),
+    supabase
+      .from("contacts")
+      .select("id, name")
+      .eq("user_id", user.id)
+      .eq("role", "foreman")
       .order("name", { ascending: true }),
   ]);
 
@@ -39,7 +45,7 @@ export default async function NewProjectPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <ProjectForm clients={clients ?? []} />
+          <ProjectForm clients={clients ?? []} foremen={foremen ?? []} />
         </CardContent>
       </Card>
       <TemplatePicker sources={sources ?? []} />

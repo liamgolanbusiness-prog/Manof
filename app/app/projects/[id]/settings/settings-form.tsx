@@ -30,6 +30,7 @@ type Project = {
   target_end_date: string | null;
   status: string | null;
   progress_pct: number | null;
+  foreman_contact_id: string | null;
 };
 type Client = {
   id: string;
@@ -40,11 +41,21 @@ type Client = {
   billing_address: string | null;
   notes: string | null;
 };
+type ForemanOption = { id: string; name: string };
 
-export function SettingsForm({ project, clients }: { project: Project; clients: Client[] }) {
+export function SettingsForm({
+  project,
+  clients,
+  foremen,
+}: {
+  project: Project;
+  clients: Client[];
+  foremen: ForemanOption[];
+}) {
   const [state, action] = useFormState<SettingsFormState, FormData>(updateProject, null);
   const [status, setStatus] = useState(project.status ?? "active");
   const [clientId, setClientId] = useState(project.client_id ?? "");
+  const [foremanId, setForemanId] = useState(project.foreman_contact_id ?? "");
   const [deleting, startDeleting] = useTransition();
   const { toast } = useToast();
   const router = useRouter();
@@ -66,6 +77,7 @@ export function SettingsForm({ project, clients }: { project: Project; clients: 
       <input type="hidden" name="id" value={project.id} />
       <input type="hidden" name="status" value={status} />
       <input type="hidden" name="client_id" value={clientId} />
+      <input type="hidden" name="foreman_contact_id" value={foremanId} />
       <Field label="שם הפרויקט *" name="name" defaultValue={project.name} required />
       <Field label="כתובת" name="address" defaultValue={project.address ?? ""} />
       <div className="space-y-1.5">
@@ -99,6 +111,27 @@ export function SettingsForm({ project, clients }: { project: Project; clients: 
             }
           />
         </div>
+      </div>
+      <div className="space-y-1.5">
+        <Label>מנהל עבודה</Label>
+        <Select value={foremanId} onValueChange={setForemanId}>
+          <SelectTrigger>
+            <SelectValue placeholder="בחר מנהל עבודה" />
+          </SelectTrigger>
+          <SelectContent>
+            {foremen.length === 0 ? (
+              <SelectItem value="none" disabled>
+                אין מנהלי עבודה — הוסף איש קשר
+              </SelectItem>
+            ) : (
+              foremen.map((f) => (
+                <SelectItem key={f.id} value={f.id}>
+                  {f.name}
+                </SelectItem>
+              ))
+            )}
+          </SelectContent>
+        </Select>
       </div>
       <div className="grid grid-cols-2 gap-3">
         <Field

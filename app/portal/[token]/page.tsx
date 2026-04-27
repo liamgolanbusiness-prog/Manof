@@ -11,14 +11,18 @@ import {
   ImageIcon,
   TrendingUp,
   Calendar,
+  CalendarRange,
   Wallet,
   Banknote,
   Lock,
   Timer,
   FileText,
   CheckCircle2,
+  Circle,
   Download,
 } from "lucide-react";
+import { milestoneStatus, projectScheduleStatus } from "@/lib/milestones";
+import { formatDate } from "@/lib/format";
 import { INVOICE_TYPE_LABELS, type InvoiceType } from "@/lib/supabase/database.types";
 import { acceptQuoteAction } from "./accept-quote/actions";
 import { approveChangeAction } from "./approve-change/actions";
@@ -42,7 +46,7 @@ export default async function PortalPage({
   const { data: project } = await supabase
     .from("projects")
     .select(
-      "id, user_id, name, address, client_name, contract_value, progress_pct, start_date, target_end_date, cover_photo_url, created_at, portal_expires_at, portal_pin_hash, portal_revoked_at"
+      "id, user_id, name, address, client_name, contract_value, progress_pct, start_date, target_end_date, cover_photo_url, created_at, portal_expires_at, portal_pin_hash, portal_revoked_at, foreman_contact_id"
     )
     .eq("portal_token", params.token)
     .maybeSingle();
@@ -176,6 +180,25 @@ export default async function PortalPage({
     .eq("project_id", project.id)
     .order("created_at", { ascending: false });
 
+  const [{ data: milestonesData }, { data: foremanData }] = await Promise.all([
+    supabase
+      .from("project_milestones")
+      .select("id, name, planned_date, actual_date, done, position")
+      .eq("project_id", project.id)
+      .order("position", { ascending: true })
+      .order("planned_date", { ascending: true, nullsFirst: false }),
+    project.foreman_contact_id
+      ? supabase
+          .from("contacts")
+          .select("name")
+          .eq("id", project.foreman_contact_id)
+          .maybeSingle()
+      : Promise.resolve({ data: null as { name: string } | null }),
+  ]);
+  const milestones = milestonesData ?? [];
+  const scheduleStatus = projectScheduleStatus(milestones);
+  const foremanName = foremanData?.name ?? null;
+
   const photos = photosRes.data ?? [];
   const totalIn = (payInRes.data ?? []).reduce((s, p) => s + Number(p.amount), 0);
   const contract = Number(project.contract_value ?? 0);
@@ -251,6 +274,67 @@ export default async function PortalPage({
             ) : null}
           </div>
         </section>
+
+        {foremanName ? (
+          <section className="rounded-2xl border bg-card p-4 flex items-center gap-3">
+            <HardHat className="h-5 w-5 text-primary shrink-0" />
+            <div className="text-sm">
+              <span className="text-muted-foreground">מנהל עבודה: </span>
+              <span className="font-semibold">{foremanName}</span>
+            </div>
+          </section>
+        ) : null}
+
+        {milestones.length > 0 ? (
+          <section className="space-y-2">
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-semibold flex items-center gap-2">
+                <CalendarRange className="h-5 w-5 text-primary" />
+                לוח זמנים
+              </h2>
+              {scheduleStatus === "behind" ? (
+                <span className="rounded-full bg-destructive/10 text-destructive text-xs font-medium px-2.5 py-1">
+                  באיחור
+                </span>
+              ) : scheduleStatus === "on_track" ? (
+                <span className="rounded-full bg-success/10 text-success text-xs font-medium px-2.5 py-1">
+                  בזמן
+                </span>
+              ) : null}
+            </div>
+            <ul className="space-y-1.5">
+              {milestones.map((m) => {
+                const status = milestoneStatus(m);
+                return (
+                  <li
+                    key={m.id}
+                    className="rounded-xl border bg-card p-3 flex items-center gap-3"
+                  >
+                    {m.done ? (
+                      <CheckCircle2 className="h-5 w-5 text-success shrink-0" />
+                    ) : (
+                      <Circle className="h-5 w-5 text-muted-foreground shrink-0" />
+                    )}
+                    <div className="min-w-0 flex-1">
+                      <div className={`font-medium truncate ${m.done ? "line-through text-muted-foreground" : ""}`}>
+                        {m.name}
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        {m.planned_date ? `מתוכנן: ${formatDate(m.planned_date)}` : "ללא תאריך"}
+                        {m.actual_date ? ` · בוצע: ${formatDate(m.actual_date)}` : ""}
+                      </div>
+                    </div>
+                    {!m.done && status === "late" ? (
+                      <span className="text-xs font-medium text-destructive shrink-0">באיחור</span>
+                    ) : !m.done && status === "due_soon" ? (
+                      <span className="text-xs font-medium text-warning shrink-0">קרוב</span>
+                    ) : null}
+                  </li>
+                );
+              })}
+            </ul>
+          </section>
+        ) : null}
 
         {photos.length > 0 ? (
           <section className="space-y-2">

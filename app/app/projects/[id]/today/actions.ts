@@ -34,10 +34,10 @@ export async function ensureTodayReport(projectId: string) {
 
   if (existing) return existing;
 
-  // Fetch weather for the project's address — no-op if no address set.
+  // Fetch weather + project default foreman in parallel.
   const { data: proj } = await supabase
     .from("projects")
-    .select("address")
+    .select("address, foreman_contact_id")
     .eq("id", projectId)
     .maybeSingle();
   let weather: string | null = null;
@@ -55,12 +55,34 @@ export async function ensureTodayReport(projectId: string) {
       user_id: user.id,
       report_date: today,
       weather,
+      foreman_contact_id: proj?.foreman_contact_id ?? null,
     })
     .select("id, weather, notes, locked, report_date, updated_at")
     .single();
 
   if (error) throw new Error(error.message);
   return data;
+}
+
+export async function saveReportForeman(
+  projectId: string,
+  reportId: string,
+  foremanContactId: string | null,
+  onSite: boolean | null
+) {
+  const { supabase } = await assertProjectAccess(projectId);
+  const { error } = await supabase
+    .from("daily_reports")
+    .update({
+      foreman_contact_id: foremanContactId,
+      foreman_on_site: onSite,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", reportId)
+    .eq("project_id", projectId);
+  if (error) throw new Error(error.message);
+  revalidatePath(`/app/projects/${projectId}/today`);
+  revalidatePath(`/app/projects/${projectId}/diary`);
 }
 
 export async function saveReportBasics(
@@ -145,11 +167,29 @@ export async function sendDailySummaryToClient(
       .maybeSingle(),
     supabase
       .from("daily_reports")
-      .select("report_date, weather, notes")
+      .select("report_date, weather, notes, foreman_contact_id, foreman_on_site")
       .eq("id", reportId)
       .maybeSingle(),
   ]);
   if (!project || !report) return { sent: false, error: "not-found" };
+
+  let foremanLine = "";
+  if (report.foreman_contact_id) {
+    const { data: foreman } = await supabase
+      .from("contacts")
+      .select("name")
+      .eq("id", report.foreman_contact_id)
+      .maybeSingle();
+    if (foreman?.name) {
+      const onSite =
+        report.foreman_on_site === true
+          ? " (היה באתר)"
+          : report.foreman_on_site === false
+          ? " (לא הגיע)"
+          : "";
+      foremanLine = `מנהל עבודה: ${foreman.name}${onSite}`;
+    }
+  }
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "";
   const portalUrl = project.portal_token ? `${appUrl}/portal/${project.portal_token}` : "";
@@ -158,6 +198,7 @@ export async function sendDailySummaryToClient(
     `שלום${project.client_name ? ` ${project.client_name}` : ""},`,
     `סיכום יום עבודה בפרויקט "${project.name}" (${report.report_date})`,
     "",
+    foremanLine,
     report.weather ? `מזג אוויר: ${report.weather}` : "",
     report.notes ? `סיכום:\n${report.notes}` : "",
     "",

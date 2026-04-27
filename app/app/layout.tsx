@@ -41,7 +41,7 @@ export default async function AppLayout({
         <div className="container h-14 flex items-center justify-between gap-2">
           <Link href="/app" className="flex items-center gap-2 font-bold">
             <HardHat className="h-5 w-5 text-primary" />
-            <span className="hidden sm:inline">אתר</span>
+            <span>אתר</span>
           </Link>
           <nav className="flex items-center gap-1">
             <Link href="/app/search" aria-label={t(locale, "nav_search")}>
@@ -49,22 +49,19 @@ export default async function AppLayout({
                 <Search className="h-4 w-4" />
               </Button>
             </Link>
-            <Link href="/app/projects/new">
+            <Link href="/app/projects/new" aria-label={t(locale, "nav_new_project")}>
               <Button size="sm" variant="ghost" className="gap-1">
                 <Plus className="h-4 w-4" />
-                <span className="hidden sm:inline">{t(locale, "nav_new_project")}</span>
               </Button>
             </Link>
             <Link href="/app/clients" aria-label="לקוחות">
               <Button size="sm" variant="ghost" className="gap-1">
                 <UsersRound className="h-4 w-4" />
-                <span className="hidden sm:inline">לקוחות</span>
               </Button>
             </Link>
-            <Link href="/app/contacts">
+            <Link href="/app/contacts" aria-label={t(locale, "nav_contacts")}>
               <Button size="sm" variant="ghost" className="gap-1">
                 <User className="h-4 w-4" />
-                <span className="hidden sm:inline">{t(locale, "nav_contacts")}</span>
               </Button>
             </Link>
             <Link href="/app/settings" aria-label={t(locale, "nav_settings")}>

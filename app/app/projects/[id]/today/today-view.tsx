@@ -27,9 +27,11 @@ import {
 } from "@/components/ui/select";
 import {
   AlertTriangle,
+  CalendarRange,
   Camera,
   CheckCircle2,
   Cloud,
+  HardHat,
   Loader2,
   Lock,
   LockOpen,
@@ -42,6 +44,7 @@ import {
 import {
   ensureTodayReport,
   saveReportBasics,
+  saveReportForeman,
   setReportLocked,
   saveAttendance,
   addReportPhoto,
@@ -50,6 +53,9 @@ import {
   resolveIssue,
   sendDailySummaryToClient,
 } from "./actions";
+import { updateMilestone } from "../schedule/actions";
+import { milestoneStatus } from "@/lib/milestones";
+import { formatDateShort } from "@/lib/format";
 import { useToast } from "@/components/ui/use-toast";
 import { uploadReportPhoto } from "./upload-client";
 import { AddMemberButton } from "../people/add-member-button";
@@ -63,7 +69,19 @@ type Report = {
   report_date: string;
   updated_at: string | null;
   voice_note_url: string | null;
+  foreman_contact_id: string | null;
+  foreman_on_site: boolean | null;
 } | null;
+
+type ForemanOption = { id: string; name: string };
+type Milestone = {
+  id: string;
+  name: string;
+  planned_date: string | null;
+  actual_date: string | null;
+  done: boolean | null;
+  position: number | null;
+};
 
 type RosterRow = {
   memberId: string;
@@ -84,6 +102,8 @@ export function TodayView({
   photos,
   issues,
   availableContacts,
+  foremen,
+  milestones,
 }: {
   projectId: string;
   report: Report;
@@ -91,6 +111,8 @@ export function TodayView({
   photos: Photo[];
   issues: Issue[];
   availableContacts: AvailableContact[];
+  foremen: ForemanOption[];
+  milestones: Milestone[];
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -128,6 +150,17 @@ export function TodayView({
   return (
     <div className="space-y-4">
       <BasicsCard projectId={projectId} report={report} />
+      <ForemanCard
+        projectId={projectId}
+        report={report}
+        foremen={foremen}
+        locked={!!report.locked}
+      />
+      <ScheduleStatusCard
+        projectId={projectId}
+        milestones={milestones}
+        locked={!!report.locked}
+      />
       <VoiceCard
         projectId={projectId}
         reportId={report.id}
@@ -286,40 +319,42 @@ function AttendanceCard({
             נוכחות ({present}/{roster.length})
           </div>
         </div>
-        <div className="flex gap-2 overflow-x-auto no-scrollbar -mx-4 px-4 pb-1">
+        <ul className="space-y-2">
           {roster.map((r) => {
             const val = hoursById[r.contactId] || "";
             const checked = parseFloat(val || "0") > 0;
             return (
-              <button
-                type="button"
+              <li
                 key={r.contactId}
-                onClick={() => {
-                  if (locked) return;
-                  setHoursById((s) => ({
-                    ...s,
-                    [r.contactId]: checked ? "" : "8",
-                  }));
-                }}
-                className={`shrink-0 min-w-[120px] rounded-xl border p-2 text-start ${
+                className={`rounded-xl border p-2.5 flex items-center gap-3 ${
                   checked ? "border-primary bg-primary/5" : "border-border bg-background"
                 }`}
-                disabled={locked}
               >
-                <div className="text-sm font-medium truncate">{r.name}</div>
-                {r.trade ? (
-                  <div className="text-xs text-muted-foreground truncate">{r.trade}</div>
-                ) : null}
-                <div
-                  className="mt-2 flex items-center gap-1 text-xs"
-                  onClick={(e) => e.stopPropagation()}
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (locked) return;
+                    setHoursById((s) => ({
+                      ...s,
+                      [r.contactId]: checked ? "" : "8",
+                    }));
+                  }}
+                  disabled={locked}
+                  className="min-w-0 flex-1 text-start"
+                  aria-label={`סמן נוכחות ${r.name}`}
                 >
+                  <div className="text-sm font-medium truncate">{r.name}</div>
+                  {r.trade ? (
+                    <div className="text-xs text-muted-foreground truncate">{r.trade}</div>
+                  ) : null}
+                </button>
+                <div className="flex items-center gap-1 text-xs shrink-0">
                   <Input
                     type="number"
                     inputMode="decimal"
                     min="0"
                     step="0.5"
-                    className="h-8 text-sm"
+                    className="h-9 w-16 text-sm text-center"
                     value={val}
                     onChange={(e) =>
                       setHoursById((s) => ({ ...s, [r.contactId]: e.target.value }))
@@ -329,10 +364,10 @@ function AttendanceCard({
                   />
                   <span className="text-muted-foreground">שע׳</span>
                 </div>
-              </button>
+              </li>
             );
           })}
-        </div>
+        </ul>
         <div className="flex justify-end">
           <Button onClick={save} disabled={saving || locked} size="sm" className="tap">
             {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
@@ -590,6 +625,228 @@ function sevColor(s: string | null) {
   if (s === "high") return "bg-destructive";
   if (s === "low") return "bg-muted-foreground/50";
   return "bg-warning";
+}
+
+function ForemanCard({
+  projectId,
+  report,
+  foremen,
+  locked,
+}: {
+  projectId: string;
+  report: NonNullable<Report>;
+  foremen: ForemanOption[];
+  locked: boolean;
+}) {
+  const { toast } = useToast();
+  const router = useRouter();
+  const [saving, startSaving] = useTransition();
+  const [foremanId, setForemanId] = useState(report.foreman_contact_id ?? "");
+  const [onSite, setOnSite] = useState<boolean | null>(report.foreman_on_site);
+
+  function save(nextForeman: string, nextOnSite: boolean | null) {
+    startSaving(async () => {
+      try {
+        await saveReportForeman(projectId, report.id, nextForeman || null, nextOnSite);
+        router.refresh();
+      } catch (e) {
+        toast({ title: `שגיאה: ${(e as Error).message}`, variant: "destructive" });
+      }
+    });
+  }
+
+  return (
+    <Card>
+      <CardContent className="p-4 space-y-3">
+        <div className="flex items-center gap-2 text-sm font-medium">
+          <HardHat className="h-4 w-4 text-muted-foreground" />
+          מנהל עבודה
+        </div>
+        <div className="space-y-1.5">
+          <Label>שם מנהל העבודה היום</Label>
+          <Select
+            value={foremanId}
+            onValueChange={(v) => {
+              setForemanId(v);
+              save(v, onSite);
+            }}
+            disabled={locked || saving}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="בחר מנהל עבודה" />
+            </SelectTrigger>
+            <SelectContent>
+              {foremen.length === 0 ? (
+                <SelectItem value="none" disabled>
+                  אין מנהלי עבודה — הוסף איש קשר עם תפקיד &quot;מנהל עבודה&quot;
+                </SelectItem>
+              ) : (
+                foremen.map((f) => (
+                  <SelectItem key={f.id} value={f.id}>
+                    {f.name}
+                  </SelectItem>
+                ))
+              )}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="flex items-center gap-2 pt-1">
+          <Button
+            type="button"
+            size="sm"
+            variant={onSite === true ? "default" : "outline"}
+            disabled={locked || saving}
+            className="tap"
+            onClick={() => {
+              setOnSite(true);
+              save(foremanId, true);
+            }}
+          >
+            היה באתר
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            variant={onSite === false ? "default" : "outline"}
+            disabled={locked || saving}
+            className="tap"
+            onClick={() => {
+              setOnSite(false);
+              save(foremanId, false);
+            }}
+          >
+            לא הגיע
+          </Button>
+          {saving ? <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" /> : null}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function ScheduleStatusCard({
+  projectId,
+  milestones,
+  locked,
+}: {
+  projectId: string;
+  milestones: Milestone[];
+  locked: boolean;
+}) {
+  const { toast } = useToast();
+  const router = useRouter();
+  const [pending, startPending] = useTransition();
+
+  // Show: any late, plus next 3 upcoming non-done.
+  const today = new Date();
+  const late = milestones.filter(
+    (m) => !m.done && m.planned_date && milestoneStatus(m, today) === "late"
+  );
+  const upcoming = milestones
+    .filter((m) => !m.done && m.planned_date && milestoneStatus(m, today) !== "late")
+    .slice(0, 3);
+  const visible = [...late, ...upcoming];
+
+  if (milestones.length === 0) {
+    return (
+      <Card>
+        <CardContent className="p-4 space-y-2">
+          <div className="flex items-center gap-2 text-sm font-medium">
+            <CalendarRange className="h-4 w-4 text-muted-foreground" />
+            לוח זמנים
+          </div>
+          <p className="text-sm text-muted-foreground">
+            עדיין לא הוגדרו אבני דרך לפרויקט.
+          </p>
+          <a
+            href={`/app/projects/${projectId}/schedule`}
+            className="text-sm text-primary hover:underline"
+          >
+            הוסף אבני דרך ←
+          </a>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  function markDone(id: string) {
+    startPending(async () => {
+      try {
+        await updateMilestone(projectId, id, { done: true });
+        router.refresh();
+        toast({ title: "סומן כהושלם", variant: "success" });
+      } catch (e) {
+        toast({ title: `שגיאה: ${(e as Error).message}`, variant: "destructive" });
+      }
+    });
+  }
+
+  return (
+    <Card>
+      <CardContent className="p-4 space-y-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2 text-sm font-medium">
+            <CalendarRange className="h-4 w-4 text-muted-foreground" />
+            לוח זמנים
+            {late.length > 0 ? (
+              <span className="rounded-full bg-destructive/10 text-destructive text-xs font-medium px-2 py-0.5">
+                {late.length} באיחור
+              </span>
+            ) : (
+              <span className="rounded-full bg-success/10 text-success text-xs font-medium px-2 py-0.5">
+                בזמן
+              </span>
+            )}
+          </div>
+          <a
+            href={`/app/projects/${projectId}/schedule`}
+            className="text-xs text-primary hover:underline"
+          >
+            לעמוד המלא
+          </a>
+        </div>
+        {visible.length === 0 ? (
+          <p className="text-sm text-muted-foreground">
+            כל אבני הדרך הוגדרו ללא תאריך או הושלמו.
+          </p>
+        ) : (
+          <ul className="space-y-1.5">
+            {visible.map((m) => {
+              const status = milestoneStatus(m, today);
+              return (
+                <li
+                  key={m.id}
+                  className="flex items-center justify-between gap-2 rounded-lg border p-2.5 text-sm"
+                >
+                  <div className="min-w-0 flex-1">
+                    <div className="font-medium truncate">{m.name}</div>
+                    <div className="text-xs text-muted-foreground">
+                      {m.planned_date ? formatDateShort(m.planned_date) : "—"}
+                      {status === "late" ? " · באיחור" : ""}
+                      {status === "due_soon" ? " · קרוב" : ""}
+                    </div>
+                  </div>
+                  {!locked ? (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => markDone(m.id)}
+                      disabled={pending}
+                      className="tap text-success"
+                      aria-label={`סמן ${m.name} כהושלם`}
+                    >
+                      {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
+                      בוצע
+                    </Button>
+                  ) : null}
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </CardContent>
+    </Card>
+  );
 }
 
 function CloseDayCard({

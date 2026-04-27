@@ -24,22 +24,23 @@ import {
 export default async function DashboardPage() {
   const user = await requireUser();
   const supabase = createClient();
-  const locale = await getUserLocale();
 
-  // First-run gate: never-onboarded users land on the welcome page so they
-  // see the setup checklist + demo-project button instead of an empty shell.
-  const { data: prof } = await supabase
-    .from("profiles")
-    .select("onboarding_completed_at")
-    .eq("id", user.id)
-    .maybeSingle();
+  // Run profile + projects + locale in parallel — they don't depend on each
+  // other. The onboarding redirect still fires before any further queries.
+  const [{ data: prof }, { data: projects }, locale] = await Promise.all([
+    supabase
+      .from("profiles")
+      .select("onboarding_completed_at")
+      .eq("id", user.id)
+      .maybeSingle(),
+    supabase
+      .from("projects")
+      .select("id, name, client_name, status, progress_pct, contract_value")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false }),
+    getUserLocale(),
+  ]);
   if (!prof?.onboarding_completed_at) redirect("/app/welcome");
-
-  const { data: projects } = await supabase
-    .from("projects")
-    .select("id, name, client_name, status, progress_pct, contract_value")
-    .eq("user_id", user.id)
-    .order("created_at", { ascending: false });
 
   const active = (projects ?? []).filter((p) => (p.status ?? "active") === "active");
   const projectIds = (projects ?? []).map((p) => p.id);
@@ -80,13 +81,81 @@ export default async function DashboardPage() {
   let overdueInvoicesTotal = 0;
 
   if (projectIds.length > 0) {
-    // Today's reports → photos
-    const { data: todayReports } = await supabase
-      .from("daily_reports")
-      .select("id")
-      .in("project_id", projectIds)
-      .eq("report_date", today);
-    const todayReportIds = (todayReports ?? []).map((r) => r.id);
+    // Fire all independent aggregations in parallel — these previously ran
+    // sequentially, which meant the dashboard waited 8× round-trips.
+    const [
+      todayReportsRes,
+      weekExpensesRes,
+      issuesCountRes,
+      tasksCountRes,
+      payInRes,
+      monthExpensesRes,
+      invoicesMonthRes,
+      overdueRes,
+      periodPayRes,
+      periodExpRes,
+    ] = await Promise.all([
+      supabase
+        .from("daily_reports")
+        .select("id")
+        .in("project_id", projectIds)
+        .eq("report_date", today),
+      supabase
+        .from("expenses")
+        .select("amount")
+        .eq("user_id", user.id)
+        .gte("expense_date", weekStartIso),
+      supabase
+        .from("issues")
+        .select("id", { count: "exact", head: true })
+        .in("project_id", projectIds)
+        .neq("status", "resolved"),
+      supabase
+        .from("tasks")
+        .select("id", { count: "exact", head: true })
+        .in("project_id", projectIds)
+        .neq("status", "done")
+        .lte("due_date", today),
+      supabase
+        .from("payments")
+        .select("amount, payment_date")
+        .eq("user_id", user.id)
+        .eq("direction", "in")
+        .gte("payment_date", prevMonthStartIso),
+      supabase
+        .from("expenses")
+        .select("amount, category")
+        .eq("user_id", user.id)
+        .gte("expense_date", monthStartIso),
+      supabase
+        .from("invoices")
+        .select("total, status, issue_date, due_date, amount_paid")
+        .eq("user_id", user.id)
+        .in("type", ["tax_invoice", "receipt", "tax_receipt"])
+        .in("status", ["issued", "paid"])
+        .gte("issue_date", monthStartIso),
+      supabase
+        .from("invoices")
+        .select("total, amount_paid")
+        .eq("user_id", user.id)
+        .in("type", ["tax_invoice", "receipt", "tax_receipt"])
+        .eq("status", "issued")
+        .lt("due_date", today),
+      supabase
+        .from("payments")
+        .select("amount, direction, payment_date")
+        .eq("user_id", user.id)
+        .gte("payment_date", seriesStartIso),
+      supabase
+        .from("expenses")
+        .select("amount, expense_date")
+        .eq("user_id", user.id)
+        .gte("expense_date", seriesStartIso),
+    ]);
+
+    // Photos today is one extra hop because it depends on todayReports — but
+    // it's fine: this is a single round-trip after the parallel batch.
+    const todayReportIds = (todayReportsRes.data ?? []).map((r) => r.id);
     if (todayReportIds.length > 0) {
       const { count } = await supabase
         .from("report_photos")
@@ -95,95 +164,36 @@ export default async function DashboardPage() {
       photosToday = count ?? 0;
     }
 
-    const { data: weekExpenses } = await supabase
-      .from("expenses")
-      .select("amount")
-      .in("project_id", projectIds)
-      .gte("expense_date", weekStartIso);
-    expensesThisWeek = (weekExpenses ?? []).reduce(
+    expensesThisWeek = (weekExpensesRes.data ?? []).reduce(
       (s, e) => s + Number(e.amount),
       0
     );
+    openIssues = issuesCountRes.count ?? 0;
+    openTasksToday = tasksCountRes.count ?? 0;
 
-    const { count: issuesCount } = await supabase
-      .from("issues")
-      .select("id", { count: "exact", head: true })
-      .in("project_id", projectIds)
-      .neq("status", "resolved");
-    openIssues = issuesCount ?? 0;
-
-    const { count: tasksCount } = await supabase
-      .from("tasks")
-      .select("id", { count: "exact", head: true })
-      .in("project_id", projectIds)
-      .neq("status", "done")
-      .lte("due_date", today);
-    openTasksToday = tasksCount ?? 0;
-
-    // Payments in (revenue) this month vs last
-    const { data: payIn } = await supabase
-      .from("payments")
-      .select("amount, payment_date")
-      .in("project_id", projectIds)
-      .eq("direction", "in")
-      .gte("payment_date", prevMonthStartIso);
-    for (const p of payIn ?? []) {
+    for (const p of payInRes.data ?? []) {
       const amt = Number(p.amount);
       if (p.payment_date >= monthStartIso) revenueThisMonth += amt;
       else if (p.payment_date >= prevMonthStartIso) revenuePrevMonth += amt;
     }
-
-    // Month expenses + category breakdown
-    const { data: monthExpenses } = await supabase
-      .from("expenses")
-      .select("amount, category")
-      .in("project_id", projectIds)
-      .gte("expense_date", monthStartIso);
-    for (const e of monthExpenses ?? []) {
+    for (const e of monthExpensesRes.data ?? []) {
       const amt = Number(e.amount);
       expensesThisMonth += amt;
       expenseByCat.set(e.category, (expenseByCat.get(e.category) ?? 0) + amt);
     }
-
-    // Invoices this month + overdue outstanding
-    const { data: invoicesMonth } = await supabase
-      .from("invoices")
-      .select("total, status, issue_date, due_date, amount_paid")
-      .eq("user_id", user.id)
-      .in("status", ["issued", "paid"])
-      .gte("issue_date", monthStartIso);
-    for (const inv of invoicesMonth ?? []) {
+    for (const inv of invoicesMonthRes.data ?? []) {
       if (inv.status === "issued") invoicesThisMonth += Number(inv.total);
     }
-
-    const { data: overdue } = await supabase
-      .from("invoices")
-      .select("total, amount_paid")
-      .eq("user_id", user.id)
-      .eq("status", "issued")
-      .lt("due_date", today);
-    for (const inv of overdue ?? []) {
+    for (const inv of overdueRes.data ?? []) {
       overdueInvoicesTotal += Number(inv.total) - Number(inv.amount_paid ?? 0);
     }
-
-    // 12-week series — bucket payments in + expenses
-    const { data: periodPay } = await supabase
-      .from("payments")
-      .select("amount, direction, payment_date")
-      .in("project_id", projectIds)
-      .gte("payment_date", seriesStartIso);
-    for (const p of periodPay ?? []) {
+    for (const p of periodPayRes.data ?? []) {
       const b = weekBuckets.find((w) => p.payment_date >= w.startIso && p.payment_date <= w.endIso);
       if (!b) continue;
       if (p.direction === "in") b.inflow += Number(p.amount);
       else b.outflow += Number(p.amount);
     }
-    const { data: periodExp } = await supabase
-      .from("expenses")
-      .select("amount, expense_date")
-      .in("project_id", projectIds)
-      .gte("expense_date", seriesStartIso);
-    for (const e of periodExp ?? []) {
+    for (const e of periodExpRes.data ?? []) {
       const b = weekBuckets.find((w) => e.expense_date >= w.startIso && e.expense_date <= w.endIso);
       if (b) b.outflow += Number(e.amount);
     }

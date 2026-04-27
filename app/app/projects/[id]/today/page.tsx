@@ -10,7 +10,7 @@ export default async function TodayPage({ params }: { params: { id: string } }) 
 
   const { data: project } = await supabase
     .from("projects")
-    .select("id")
+    .select("id, foreman_contact_id")
     .eq("id", params.id)
     .eq("user_id", user.id)
     .maybeSingle();
@@ -18,10 +18,12 @@ export default async function TodayPage({ params }: { params: { id: string } }) 
 
   const today = isoDate();
 
-  const [reportRes, membersRes] = await Promise.all([
+  const [reportRes, membersRes, foremenRes, milestonesRes] = await Promise.all([
     supabase
       .from("daily_reports")
-      .select("id, weather, notes, locked, report_date, updated_at, voice_note_url")
+      .select(
+        "id, weather, notes, locked, report_date, updated_at, voice_note_url, foreman_contact_id, foreman_on_site"
+      )
       .eq("project_id", params.id)
       .eq("report_date", today)
       .maybeSingle(),
@@ -30,6 +32,17 @@ export default async function TodayPage({ params }: { params: { id: string } }) 
       .select("id, contact_id, role_in_project")
       .eq("project_id", params.id)
       .order("created_at", { ascending: true }),
+    supabase
+      .from("contacts")
+      .select("id, name")
+      .eq("user_id", user.id)
+      .eq("role", "foreman")
+      .order("name", { ascending: true }),
+    supabase
+      .from("project_milestones")
+      .select("id, name, planned_date, actual_date, done, position")
+      .eq("project_id", params.id)
+      .order("position", { ascending: true }),
   ]);
 
   const report = reportRes.data;
@@ -84,16 +97,21 @@ export default async function TodayPage({ params }: { params: { id: string } }) 
       null,
   }));
 
-  // Contacts not yet in this project — for inline "add member" when roster is empty
-  const memberContactIds = new Set(roster.map((r) => r.contactId));
-  const { data: allContacts } = await supabase
-    .from("contacts")
-    .select("id, name, trade, role")
-    .eq("user_id", user.id)
-    .order("name", { ascending: true });
-  const availableContacts = (allContacts ?? []).filter(
-    (c) => !memberContactIds.has(c.id)
-  );
+  // Contacts not yet in this project — only used by the inline "add member"
+  // CTA that appears when the roster is empty. Skip the query otherwise so
+  // we don't fetch the entire contacts table on every visit.
+  let availableContacts: { id: string; name: string; trade: string | null; role: string }[] = [];
+  if (roster.length === 0) {
+    const memberContactIds = new Set(roster.map((r) => r.contactId));
+    const { data: allContacts } = await supabase
+      .from("contacts")
+      .select("id, name, trade, role")
+      .eq("user_id", user.id)
+      .order("name", { ascending: true });
+    availableContacts = (allContacts ?? []).filter(
+      (c) => !memberContactIds.has(c.id)
+    );
+  }
 
   return (
     <div className="container py-5 pb-safe space-y-4">
@@ -116,6 +134,8 @@ export default async function TodayPage({ params }: { params: { id: string } }) 
         photos={photos}
         issues={issues}
         availableContacts={availableContacts}
+        foremen={foremenRes.data ?? []}
+        milestones={milestonesRes.data ?? []}
       />
     </div>
   );

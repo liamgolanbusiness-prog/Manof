@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { requireUser } from "@/lib/auth";
 import { formatDate, formatWeekday } from "@/lib/format";
 import { notFound } from "next/navigation";
-import { ChevronRight, Lock, AlertTriangle } from "lucide-react";
+import { ChevronRight, Lock, AlertTriangle, HardHat } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { ShareReportButton } from "./share-report-button";
 
@@ -25,11 +25,23 @@ export default async function ReportDetail({
 
   const { data: report } = await supabase
     .from("daily_reports")
-    .select("id, report_date, weather, notes, locked, updated_at, voice_note_url")
+    .select(
+      "id, report_date, weather, notes, locked, updated_at, voice_note_url, foreman_contact_id, foreman_on_site"
+    )
     .eq("id", params.reportId)
     .eq("project_id", params.id)
     .maybeSingle();
   if (!report) notFound();
+
+  let foremanName: string | null = null;
+  if (report.foreman_contact_id) {
+    const { data: fm } = await supabase
+      .from("contacts")
+      .select("name")
+      .eq("id", report.foreman_contact_id)
+      .maybeSingle();
+    foremanName = fm?.name ?? null;
+  }
 
   const { data: projectRow } = await supabase
     .from("projects")
@@ -110,23 +122,42 @@ export default async function ReportDetail({
         />
       </div>
 
-      {report.weather ? (
+      {foremanName ? (
         <Card>
-          <CardContent className="p-4 text-sm">
-            <div className="text-muted-foreground text-xs mb-1">מזג אוויר</div>
-            <div>{report.weather}</div>
+          <CardContent className="p-4 text-sm flex items-center gap-2">
+            <HardHat className="h-4 w-4 text-muted-foreground" />
+            <span className="text-muted-foreground">מנהל עבודה:</span>
+            <span className="font-medium">{foremanName}</span>
+            {report.foreman_on_site === true ? (
+              <span className="ms-auto text-xs text-success">היה באתר</span>
+            ) : report.foreman_on_site === false ? (
+              <span className="ms-auto text-xs text-destructive">לא הגיע</span>
+            ) : null}
           </CardContent>
         </Card>
       ) : null}
 
-      {report.notes ? (
-        <Card>
-          <CardContent className="p-4 text-sm whitespace-pre-line">
-            <div className="text-muted-foreground text-xs mb-1">הערות</div>
-            {report.notes}
-          </CardContent>
-        </Card>
-      ) : null}
+      <Card>
+        <CardContent className="p-4 text-sm">
+          <div className="text-muted-foreground text-xs mb-1">מזג אוויר</div>
+          {report.weather ? (
+            <div>{report.weather}</div>
+          ) : (
+            <div className="text-muted-foreground">לא נרשם</div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardContent className="p-4 text-sm whitespace-pre-line">
+          <div className="text-muted-foreground text-xs mb-1">הערות</div>
+          {report.notes ? (
+            report.notes
+          ) : (
+            <div className="text-muted-foreground">ללא הערות</div>
+          )}
+        </CardContent>
+      </Card>
 
       {report.voice_note_url ? (
         <Card>
@@ -137,13 +168,15 @@ export default async function ReportDetail({
         </Card>
       ) : null}
 
-      {(atRes.data ?? []).length > 0 ? (
-        <Card>
-          <CardContent className="p-4 space-y-2">
-            <div className="flex items-center justify-between text-xs text-muted-foreground">
-              <span>נוכחות</span>
+      <Card>
+        <CardContent className="p-4 space-y-2">
+          <div className="flex items-center justify-between text-xs text-muted-foreground">
+            <span>נוכחות</span>
+            {(atRes.data ?? []).length > 0 ? (
               <span>סה״כ {totalHours} שעות</span>
-            </div>
+            ) : null}
+          </div>
+          {(atRes.data ?? []).length > 0 ? (
             <ul className="divide-y">
               {(atRes.data ?? []).map((a, idx) => (
                 <li key={idx} className="py-2 flex items-center justify-between text-sm">
@@ -154,9 +187,11 @@ export default async function ReportDetail({
                 </li>
               ))}
             </ul>
-          </CardContent>
-        </Card>
-      ) : null}
+          ) : (
+            <div className="text-sm text-muted-foreground">לא נרשמה נוכחות</div>
+          )}
+        </CardContent>
+      </Card>
 
       {(phRes.data ?? []).length > 0 ? (
         <Card>
